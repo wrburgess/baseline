@@ -1,4 +1,4 @@
-Explore the Optimus codebase for the topic: $ARGUMENTS
+Explore the Baseline codebase for the topic: $ARGUMENTS
 
 ## Steps
 

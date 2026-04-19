@@ -1,22 +1,8 @@
-# GitHub Copilot Instructions for Optimus
+# GitHub Copilot Instructions for Baseline
 
 ## About This Project
 
-Optimus is the Ruby on Rails application template and reference implementation for the MPI Media application ecosystem. Standards, conventions, and architectural decisions originate here and propagate to the other applications.
-
-## MPI Application Ecosystem
-
-| Project | GitHub Repo | Role |
-|---------|-------------|------|
-| **Optimus** (this repo) | `mpimedia/optimus` | Application template and pattern source |
-| **Markaz** (Avails) | `mpimedia/avails_server` | Central data repository for MPI Media |
-| **SFA** | `mpimedia/wpa_film_library` | Video clip hosting and search engine |
-| **Garden** | `mpimedia/garden` | Static site generator for MPI sites |
-| **Harvest** | `mpimedia/harvest` | Public-facing transaction and ecommerce platform |
-| **Markaz CRM** | `mpimedia/markez-crm` | CRM (to be merged into Markaz) |
-| **Infrastructure** | `mpimedia/mpi-infrastructure` | Infrastructure configuration and provisioning |
-| **CI Workflows** | `mpimedia/mpi-application-workflows` | Shared reusable GitHub Actions workflows |
-| **.github** | `mpimedia/.github` | Organization-level GitHub configuration |
+Baseline is the Ruby on Rails application template and reference implementation. Standards, conventions, and architectural decisions originate here and propagate to the other applications.
 
 ## Tech Stack
 

@@ -1,6 +1,6 @@
 Review GitHub issue #$ARGUMENTS and prepare an assessment for the Human Contributor (HC).
 
-This is **Stage 1** of the MPI Development Lifecycle (see `docs/standards/development-lifecycle.md`).
+This is **Stage 1** of the Baseline Development Lifecycle (see `docs/standards/development-lifecycle.md`).
 
 ## Steps
 
@@ -27,7 +27,7 @@ This is **Stage 1** of the MPI Development Lifecycle (see `docs/standards/develo
 7. **Research Rails ecosystem solutions** — before proposing custom implementations:
    - Check if Rails conventions already solve the problem (built-in ActiveRecord features, concerns, validations)
    - Search for established gems that address the need (check RubyGems, Ruby Toolbox, community recommendations)
-   - Reference `.claude/rules/backend.md` for MPI gem preferences
+   - Reference `.claude/rules/backend.md` for gem preferences
    - List what was considered in the assessment, even if rejected
 8. **Identify unknowns** — list anything ambiguous or underspecified in the issue
 9. **Ask clarifying questions** — if there are gaps in the requirements, ask the HC before proceeding (ask, don't guess)

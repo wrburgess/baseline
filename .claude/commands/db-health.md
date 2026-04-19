@@ -1,4 +1,4 @@
-Run a database health check and report findings for the Optimus application.
+Run a database health check and report findings for the Baseline application.
 
 ## Steps
 

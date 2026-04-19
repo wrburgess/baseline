@@ -1,6 +1,6 @@
 Create an implementation plan for GitHub issue #$ARGUMENTS based on the chosen option from the assessment.
 
-This is **Stage 2** of the MPI Development Lifecycle (see `docs/standards/development-lifecycle.md`).
+This is **Stage 2** of the Baseline Development Lifecycle (see `docs/standards/development-lifecycle.md`).
 
 ## Steps
 

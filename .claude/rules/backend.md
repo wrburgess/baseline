@@ -11,7 +11,7 @@ Before building any custom solution, research whether Rails conventions, establi
 - **Build custom only when justified** — if no existing solution fits, explain why in the assessment/plan. "I couldn't find a gem for this" is acceptable. "I didn't look" is not.
 - **During `/assess` and `/cplan`** — explicitly list gems and Rails patterns considered for the solution, even if rejected. This shows due diligence and gives the HC options.
 
-### MPI Gem Preferences
+### Gem Preferences
 
 When multiple gems solve the same problem, use these:
 

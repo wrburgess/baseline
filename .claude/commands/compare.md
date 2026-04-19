@@ -1,4 +1,4 @@
-Compare the agent configuration standards between Optimus and the target MPI project: $ARGUMENTS
+Compare the agent configuration standards between Baseline and the target project: $ARGUMENTS
 
 ## Steps
 
@@ -7,8 +7,8 @@ Compare the agent configuration standards between Optimus and the target MPI pro
    - Read `.claude/projects.local.json` for local paths if available
    - If no local path, use `gh api` to fetch files from the GitHub repo
 
-2. **Read Optimus shared standards** (the source of truth):
-   - `CLAUDE.md` — shared sections: Permissions and Autonomy, Commit and PR Standards, Agent Attribution, Required Workflow, Commands, Testing, Asset Pipeline, MPI Application Ecosystem
+2. **Read Baseline shared standards** (the source of truth):
+   - `CLAUDE.md` — shared sections: Permissions and Autonomy, Commit and PR Standards, Agent Attribution, Required Workflow, Commands, Testing, Asset Pipeline
    - `AGENTS.md` — shared sections: Pre-Commit Requirements, PR Instructions, Review Guidelines, Agent Attribution
    - `.claude/hooks/enforce-branch-creation.sh`
    - `.claude/commands/` — all command templates
@@ -24,7 +24,7 @@ Compare the agent configuration standards between Optimus and the target MPI pro
 
 4. **Compare and report**:
    - Which shared files are missing in the target project
-   - Which shared files exist but have drifted from the Optimus version
+   - Which shared files exist but have drifted from the Baseline version
    - Which project-specific sections are correctly customized
    - Specific lines or sections that differ
 
@@ -36,7 +36,7 @@ Compare the agent configuration standards between Optimus and the target MPI pro
 ## Output Format
 
 ```markdown
-## Standards Comparison: Optimus vs [Target Project]
+## Standards Comparison: Baseline vs [Target Project]
 
 ### Missing Files
 - [files that should exist but don't]

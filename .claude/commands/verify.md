@@ -1,6 +1,6 @@
 Self-review PR #$ARGUMENTS against the implementation plan before Reviewer sees it.
 
-This is **Stage 4** of the MPI Development Lifecycle (see `docs/standards/development-lifecycle.md`).
+This is **Stage 4** of the Baseline Development Lifecycle (see `docs/standards/development-lifecycle.md`).
 
 ## Steps
 

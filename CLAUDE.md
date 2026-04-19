@@ -1,12 +1,6 @@
 # CLAUDE.md
 
-Optimus is the Ruby on Rails template and reference implementation for the MPI Media application suite. Conventions originate here and flow to all MPI apps.
-
-## MPI Media
-
-MPI Media is a film and television distributor (labels: Watermelon Pictures, Dark Sky Films, MPI Classics), focused on the North American marketplace. The application suite supports internal staff managing catalog/sales/distribution and public users browsing, purchasing, and interacting with MPI's content.
-
-**Apps:** Markaz (internal catalog/data), SFA (public + internal stock footage), Garden (public sites + internal CMS), Harvest (public ecommerce + internal), CRM (internal), Optimus (dev team template). All share: Ruby/Rails, PostgreSQL, Hotwire, Bootstrap 5.3, ViewComponent, GoodJob, Pundit, RSpec/FactoryBot. See @.claude/projects.json for full registry.
+Baseline is the Ruby on Rails app template. Conventions defined here are authoritative.
 
 ## Quality Expectations
 
@@ -57,7 +51,7 @@ See `AGENTS.md` for full attribution rules. Summary:
 
 1. Ask questions one at a time to remove ambiguity — do NOT guess
 2. Research and present recommendations, alternatives, and best practices when options arise
-3. Ask about MPI business context when it affects the work — what the app does, who uses it, why a feature matters, how apps relate to each other
+3. Ask about Baseline business context when it affects the work — what the app does, who uses it, why a feature matters, how apps relate to each other
 
 ## Permissions and Autonomy
 
@@ -96,6 +90,6 @@ bin/kamal deploy -d staging                    # Staging
 - **Testing** — See @.claude/rules/testing.md and @docs/standards/testing.md.
 - **Self-review** — Auto-loads on `app/`, `spec/`, `lib/`. See @.claude/rules/self-review.md.
 - **Migration safety** — `strong_migrations` enforced. See @.claude/rules/migrations.md.
-- **MCP** — See @docs/architecture/mcp-integration-audit.md.
+- **MCP** — See `bin/setup-mcp`.
 - **Memory** — See @docs/standards/memory-management.md. Run `/memory-review` to audit.
 - **Full architecture** — See @docs/architecture/overview.md.

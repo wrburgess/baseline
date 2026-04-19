@@ -1,6 +1,6 @@
 Finalize and prepare PR #$ARGUMENTS for merge.
 
-This is **Stage 5** of the MPI Development Lifecycle (see `docs/standards/development-lifecycle.md`).
+This is **Stage 5** of the Baseline Development Lifecycle (see `docs/standards/development-lifecycle.md`).
 
 ## Steps
 

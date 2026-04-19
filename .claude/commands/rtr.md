@@ -1,6 +1,6 @@
 Read and respond to PR review comments for PR #$ARGUMENTS.
 
-This supports **Stage 5 (Deliver)** of the MPI Development Lifecycle (see `docs/standards/development-lifecycle.md`).
+This supports **Stage 5 (Deliver)** of the Baseline Development Lifecycle (see `docs/standards/development-lifecycle.md`).
 
 ## Steps
 

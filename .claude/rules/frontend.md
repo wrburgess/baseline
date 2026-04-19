@@ -10,7 +10,7 @@ Applies to: `app/javascript/`, `app/views/`, `app/components/`, `app/assets/`
 
 ## Dual Asset Pipelines
 
-Optimus has **two separate pipelines** — admin and public. They do not share runtime Stimulus controllers or entry points.
+Baseline has **two separate pipelines** — admin and public. They do not share runtime Stimulus controllers or entry points.
 
 | Pipeline | JS Entry | CSS Entry | Layout | Route Prefix |
 |----------|----------|-----------|--------|--------------|

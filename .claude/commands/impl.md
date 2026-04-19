@@ -1,6 +1,6 @@
 Execute the implementation plan for GitHub issue #$ARGUMENTS.
 
-This is **Stage 3** of the MPI Development Lifecycle (see `docs/standards/development-lifecycle.md`).
+This is **Stage 3** of the Baseline Development Lifecycle (see `docs/standards/development-lifecycle.md`).
 
 ## Steps
 
