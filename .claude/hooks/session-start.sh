@@ -10,22 +10,36 @@ cd "${CLAUDE_PROJECT_DIR:-$(pwd)}"
 
 echo "[session-start] repo: $(pwd)"
 
-# --- Ruby ---------------------------------------------------------------
-# Install the Ruby version from .ruby-version via rbenv (if both present).
-if [ -f .ruby-version ] && command -v rbenv >/dev/null 2>&1; then
-  RUBY_VERSION_FILE="$(tr -d '[:space:]' < .ruby-version)"
-  echo "[session-start] ensuring ruby $RUBY_VERSION_FILE via rbenv"
-  rbenv install -s "$RUBY_VERSION_FILE" || echo "[session-start] rbenv install failed; continuing with system ruby"
-  rbenv rehash || true
+# --- mise ---------------------------------------------------------------
+# Install mise if missing, then use it to provision Ruby/Node from
+# .mise.toml / .tool-versions / .ruby-version / .nvmrc.
+export MISE_INSTALL_PATH="${MISE_INSTALL_PATH:-$HOME/.local/bin/mise}"
+export PATH="$HOME/.local/bin:$PATH"
+
+if ! command -v mise >/dev/null 2>&1; then
+  echo "[session-start] installing mise"
+  curl -fsSL https://mise.run | sh
 fi
 
-# --- Node ---------------------------------------------------------------
-# Install the Node version from .nvmrc via nvm (if both present).
-if [ -f .nvmrc ] && [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]; then
-  # shellcheck source=/dev/null
-  . "${NVM_DIR:-$HOME/.nvm}/nvm.sh"
-  echo "[session-start] ensuring node $(cat .nvmrc) via nvm"
-  nvm install
+if command -v mise >/dev/null 2>&1; then
+  # Trust repo's mise config so mise install won't prompt.
+  for f in .mise.toml mise.toml .tool-versions; do
+    [ -f "$f" ] && mise trust "$f" >/dev/null 2>&1 || true
+  done
+
+  if [ -f .mise.toml ] || [ -f mise.toml ] || [ -f .tool-versions ] || [ -f .ruby-version ] || [ -f .nvmrc ]; then
+    echo "[session-start] mise install"
+    mise install
+  fi
+
+  # Shim mise-managed tools onto PATH for the rest of this script.
+  eval "$(mise env -s bash 2>/dev/null || true)"
+
+  # Persist mise activation for the session.
+  if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$CLAUDE_ENV_FILE"
+    echo 'eval "$(mise activate bash)"' >> "$CLAUDE_ENV_FILE"
+  fi
 fi
 
 # --- Ruby gems ----------------------------------------------------------
