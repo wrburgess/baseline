@@ -35,7 +35,7 @@ It is **not** a lineup optimizer, a prediction model, a roster-management tool, 
 | 6 | Tri-level | One `Team` per tri-level team; UI splits matrix into three court-sections by rating |
 | 7 | Captain dashboard | `/` shows active-team cards with format, next match, recent match, "scout" + "enter match" CTAs |
 | 8 | Match entry primitive | A "match night" (`TeamMatch`) is the unit; rating snapshots auto-populated from current `grades` at commit |
-| 9 | Import pipeline | Claude Sonnet vision on TennisLink screenshots; unified `imports` table with `kind` enum (`team_roster` \| `match_night` \| `player_ratings`) |
+| 9 | Import pipeline | Claude Sonnet vision on TennisLink screenshots; unified `imports` table with `kind` enum (`team_roster` \| `match_night` \| `player_ratings` \| `league_schedule`) |
 | 10 | Team lineage | Explicit `team_lineages` table; default team-vs-team view is lineage-vs-lineage |
 | 11 | Post-season modeling | `TeamMatch.level` enum (`regular_season` \| `local_playoff` \| `district` \| `section` \| `national` \| `tournament`); no `Competition`/`Stage`/`TeamStageEntry` entities |
 | 12 | Court position | `matches.court_number` integer, populated from import |
@@ -59,6 +59,9 @@ It is **not** a lineup optimizer, a prediction model, a roster-management tool, 
 | 30 | Score storage | Hybrid: `format` + `rules_format` + `outcome` + `winning_side` enums + structured `sets` JSONB + cached `score_display` string |
 | 31 | Player dedup | `players` + `player_aliases` + pg_trgm fuzzy resolution + admin merge flow + needs-disambiguation queue |
 | 32 | Analysis fidelity | Tables only. Blazer handles ad-hoc visual needs |
+| 33 | Scheduled fixtures | First-class `scheduled_fixtures` table. Pre-season fixture list imported via `kind: league_schedule`. `team_matches.fixture_id` (nullable FK) links a played match to its fixture when imported. Dashboard "next match" reads from `scheduled_fixtures` |
+| 34 | Search shell vs search implementation | Persistent nav shell from Phase 3; functional pg_trgm autocomplete in Phase 6; polish in Phase 11. |
+| 35 | H2H notes visibility | Captain-collaborative — shared among all authenticated captains. Not per-user-private |
 
 ---
 
@@ -158,6 +161,21 @@ source                 string (enum)           # manual | parser_tennisrecord | 
 
 ### Matches & participation
 
+**`scheduled_fixtures`** (pre-season league fixture list — the schedule)
+```
+league_id              bigint FK
+home_team_id           bigint FK
+away_team_id           bigint FK
+scheduled_on           date
+start_time             time nullable
+venue                  string nullable
+status                 string (enum)           # scheduled | completed | postponed | cancelled | defaulted
+team_match_id          bigint FK nullable      # populated when the match is played + imported
+notes                  text
+
+unique index on (league_id, scheduled_on, home_team_id, away_team_id)
+```
+
 **`team_matches`** (one per "match night")
 ```
 league_id              bigint FK
@@ -169,6 +187,7 @@ event_name             string nullable         # e.g. "HoA Districts 2026", "Pla
 venue                  string nullable
 home_score             integer                 # lines won (e.g., 3)
 away_score             integer                 # lines won (e.g., 2)
+fixture_id             bigint FK nullable      # linked to scheduled_fixtures.id if the match reconciles to a fixture
 notes                  text
 
 unique index on (played_on, home_team_id, away_team_id)  -- no duplicates
@@ -238,8 +257,8 @@ author_id              bigint FK       # users.id
 ```
 user_id                bigint FK
 screenshot             ActiveStorage attachment
-kind                   string (enum)           # team_roster | match_night | player_ratings
-source_type            string (enum)           # tennislink_team_page | tennislink_match_results | tennisrecord_player_page | wtn_player_page
+kind                   string (enum)           # team_roster | match_night | player_ratings | league_schedule
+source_type            string (enum)           # tennislink_team_page | tennislink_match_results | tennislink_schedule_page | tennisrecord_player_page | wtn_player_page
 status                 string (enum)           # uploaded | parsing | needs_review | committed | failed
 parsed_data            jsonb
 context                jsonb                   # e.g. { league_id, team_id, player_id } for scoping
@@ -296,8 +315,9 @@ All three kinds share the same flow:
 
 Per-kind schemas:
 - `team_roster`: extracts team name, league context (if discoverable), captain name, roster [{first_name, last_name, current_ntrp, position}]
-- `match_night`: extracts team names, date, level, lines [{court_number, format, home_players, away_players, sets, outcome, winning_side, venue}]
-- `player_ratings`: extracts external ratings (TR / WTN) observed at the page's current state; appends as new `grades` rows
+- `match_night`: extracts team names, date, level, lines [{court_number, format, home_players, away_players, sets, outcome, winning_side, venue}]. **On commit, the pipeline looks for a matching `scheduled_fixtures` row (same `league_id + scheduled_on + home_team_id + away_team_id`); if found, sets `team_matches.fixture_id` and flips `scheduled_fixtures.status` to `completed`.** Matches with no fixture (e.g., tournaments) keep `fixture_id: null`.
+- `player_ratings`: extracts external ratings (TR / WTN / USTA) observed at the page's current state; appends as new `grades` rows (never in-place update).
+- `league_schedule`: extracts the full fixture list for a league in one upload — each row is `{scheduled_on, start_time, home_team, away_team, venue}`. Creates `scheduled_fixtures` rows with `status: scheduled`. Ideal source is a TennisLink league-schedule page (one screenshot per league, ~15-20 uploads per session).
 
 ### Global search (pg_trgm)
 
@@ -310,11 +330,11 @@ Top-nav global search across `players`, `teams`, `leagues`. Autocomplete shows P
 ### Dashboard (`/` after login)
 
 - **10-second answer:** "Here are the teams you're captaining right now, what's next for each."
-- Global search bar (persistent in all layouts).
+- Global search bar. The **shell** (input in top nav) is persistent in all layouts from Phase 3 onward. **Functional pg_trgm autocomplete** lands in Phase 6 alongside the dashboard (captains need search to navigate at dogfood time). Polish in Phase 11.
 - Active teams section — one card per team where `current_user` is `captain` or `co_captain` and the league is current.
 - Past teams — collapsed by default.
 
-Card content: team name · league name · format (e.g., "2S+3D") · roster size · next match (if scheduled) · recent match (with "Enter match" CTA if not yet imported) · "Scout any team in this league" picker.
+Card content: team name · league name · format (e.g., "2S+3D") · roster size · **next match** (nearest future `scheduled_fixture` with `status: scheduled`) · **recent match** (most recent `scheduled_fixture.status: completed` or orphan `TeamMatch`, with "Enter match" CTA if fixture exists but not yet imported) · "Scout any team in this league" picker.
 
 **Not on this page:** league standings, ranking tables, pending-roster-approval, notifications feed.
 
@@ -346,7 +366,7 @@ Card content: team name · league name · format (e.g., "2S+3D") · roster size 
 - Aggregate bar: "A leads 4–2" with format toggle (all / singles / doubles) AND "completed only" toggle.
 - Context strip: first meeting, most recent, rating delta.
 - **Two match lists, split singles and doubles** (same design philosophy as profile).
-- Per-pair captain-private notes (markdown). Symmetric URL (`/a/b` and `/b/a` both resolve; canonical ordering uses lower ID for cache/notes).
+- Per-pair **captain-collaborative notes** (markdown) — shared among all authenticated captains, not user-private. Symmetric URL (`/a/b` and `/b/a` both resolve; canonical ordering uses lower ID for cache/notes).
 
 ### Team profile (`/teams/:id`)
 
@@ -385,6 +405,7 @@ Full-design, not default scaffolds:
 - `Admin::Teams` — lineage assignment with fuzzy-match suggestions; read-mostly since rosters come from imports
 - `Admin::TeamLineages` — CRUD
 - `Admin::TeamPlayers` — role assignment; read-mostly
+- `Admin::ScheduledFixtures` — CRUD for manual edits (imports populate most rows); status transitions + re-linking a fixture to a team_match
 - `Admin::Imports` — see all imports across captains; retry failed
 
 ---
@@ -421,13 +442,13 @@ Each phase has a dedicated issue in the [`Baseline Setup`](https://github.com/us
 
 **Phase 4** — Admin CRUD, styled. Leagues, Flights, Players, Grades, PlayerAliases, Team Lineages, Teams, TeamPlayers, Merge flow, Disambiguation queue. Pundit policies per resource.
 
-**Phase 5** — Imports pipeline foundation + roster imports. Active Storage, Claude vision service, `imports` table, preview/commit scaffolding, `kind: team_roster` workflow. First real data lands in prod via imports.
+**Phase 5** — Imports pipeline foundation + all three pre-match kinds. Active Storage, Claude vision service, `imports` table, preview/commit scaffolding. Ships three kinds while infrastructure is fresh: `team_roster`, `player_ratings`, and `league_schedule`. First real data lands in prod via imports — rosters populate teams, ratings populate grades, schedules populate fixtures.
 
-**Phase 6** — Captain dashboard + player profile. `/` with active-team cards; `/players/:id` with full profile. Dogfood milestone: log in, see my teams, open any player.
+**Phase 6** — Captain dashboard + player profile + functional global search. `/` with active-team cards reading from `scheduled_fixtures`; `/players/:id` with full profile; pg_trgm autocomplete in the persistent nav search shell. Dogfood milestone: log in, search for a player, scout my active teams.
 
 **Phase 7** — Scouting matrix. `/scout/:ours/vs/:theirs` with dual singles/doubles matrices, format-aware, tri-level court split, toggle to widen from flight to league.
 
-**Phase 8** — Match imports + H2H cache refresh. `kind: match_night` workflow. `HeadToHeadCacheRefreshJob`. Matches flow in via TennisLink screenshots.
+**Phase 8** — Match imports + fixture linking + H2H cache refresh. `kind: match_night` workflow. On commit, reconcile each TeamMatch against `scheduled_fixtures` (same league + date + teams) — link the fixture, flip status to `completed`. `HeadToHeadCacheRefreshJob` enqueued per participant pair. Matches flow in via TennisLink screenshots.
 
 **Phase 9** — Pairwise H2H + team profile + team-vs-team. `/head_to_heads/:a/:b`, `/teams/:id`, `/team_vs_team/:a/:b` (lineage-vs-lineage default, season filter for Mode 1). Team-match scorecard rendering.
 

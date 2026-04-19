@@ -25,12 +25,13 @@
 - Captain dashboard showing active teams with next/recent match + CTAs.
 - Scouting matrix: full roster × roster, dual singles/doubles sections, format-aware per league, tri-level support.
 - Player profile: current ratings (with freshness), ratings history, match history split singles/doubles, frequent opponents/partners.
-- Pairwise H2H page with per-pair captain-private markdown notes.
+- Pairwise H2H page with per-pair **captain-collaborative** markdown notes (shared among authenticated captains; not per-user-private).
 - Team profile with lineage history + roster + team-match history.
 - Team-vs-team page, default mode = lineage-vs-lineage with season filter.
-- Match import pipeline: upload TennisLink screenshot → Claude Sonnet vision → preview + player resolution → commit → H2H cache refresh.
-- Roster import pipeline: upload TennisLink team roster screenshot → extract players + captain → commit.
-- Quarterly grade re-import pipeline: upload Tennis Record / WTN player pages → append new `grades` rows.
+- **Match import pipeline** (`kind: match_night`): upload TennisLink match-results screenshot → Claude Sonnet vision → preview + player resolution → commit → link to scheduled fixture (if present) → H2H cache refresh.
+- **Roster import pipeline** (`kind: team_roster`): upload TennisLink team-roster screenshot → extract players + captain → commit.
+- **Quarterly grade re-import pipeline** (`kind: player_ratings`): upload Tennis Record / WTN player pages → append new `grades` rows.
+- **Pre-season schedule import** (`kind: league_schedule`): upload TennisLink league-schedule screenshot → extract all fixtures for the league → create `scheduled_fixtures` rows. Feeds the dashboard's "next match" card.
 - Admin CRUD for all data hygiene.
 - Multi-captain data contribution — any captain can upload imports for teams they captain.
 - No duplicate TeamMatch uploads — unique `(played_on, home_team_id, away_team_id)`.
@@ -74,7 +75,7 @@
 - **Low-volume LLM usage.** ~$5-20/mo in vision API costs at import volumes.
 - **Tables only.** No charts, no sparklines, no timelines, no visualizations. Information density + scannability are the design goals.
 - **No mocked scraping.** Data arrives via captain screenshots + admin manual entry — no deterministic TennisLink parsers, no site-HTML scraping.
-- **Design-first.** Wireframes (no style) before schema hardening; tokens + ViewComponents before feature build-out.
+- **Design-first.** This means: **information architecture before visual style**, and **wireframes before feature implementation**. It does NOT mean "design before schema" — a minimum viable schema precedes the pages it backs (Phase 1), then wireframes (Phase 2) iterate against seeded + imported data, then tokens + ViewComponents (Phase 3), then styled feature pages.
 
 ### Short-term goals (through v0 ship)
 
@@ -82,7 +83,7 @@
 - Phase 1 schema derived from spec + one seed league + a few seed players to sanity-check.
 - Phase 2–3: wireframes + tokens + ViewComponents, all pages designed without style, then themed (light + dark).
 - Phase 4: admin CRUD for every data-hygiene task.
-- Phase 5: roster import pipeline — first real player/team data enters via TennisLink screenshots.
+- Phase 5: imports pipeline foundation + three non-match kinds (`team_roster`, `player_ratings`, `league_schedule`). Real player/team/rating/fixture data enters via TennisLink, Tennis Record, and WTN screenshots.
 - Phase 6: dashboard + profile work; **dogfood milestone** — I can log in and scout (with limited match data).
 - Phases 7–9: matrix + match imports + H2H + team surfaces.
 - Phases 10–11: manual-entry fallback + polish.
@@ -129,7 +130,7 @@
 - Phase 2: Wireframes (all pages, no style)
 - Phase 3: Design tokens + ViewComponents (light + dark)
 - Phase 4: Admin CRUD (data hygiene surfaces)
-- Phase 5: Imports pipeline + roster imports
+- Phase 5: Imports pipeline + 3 non-match kinds (roster, ratings, schedule)
 - Phase 6: Captain dashboard + player profile — **dogfood milestone**
 - Phase 7: Scouting matrix
 - Phase 8: Match imports + H2H cache refresh
