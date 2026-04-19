@@ -432,9 +432,21 @@ Full-design, not default scaffolds:
 
 Each phase has a dedicated issue in the [`Baseline Setup`](https://github.com/users/wrburgess/projects/2) project with problem, proposed solution, locked decisions, acceptance criteria, and open questions. Reference phase issues from commits and PRs.
 
-**Phase 0** — Import Optimus template + scrub MPI/Optimus references + deploy "Hello World" to `baseline.kc.tennis` via Kamal. CI green before any app code exists.
+**Phase 0** — Import Optimus template + scrub MPI references + deploy "Hello World" to `baseline.kc.tennis` via Kamal. CI green before any app code exists.
 
-**Phase 1** — Schema foundation. Fresh Baseline schema derived from §3. Models, validations, factories. Seed a minimum of one league + a few players to exercise the schema. No Courtview migration (decommissioned).
+What is **scrubbed**: MPI-specific domain names, models, data, copy, branding, fixtures, seeds, and any MPI references in config, README, or comments.
+
+What is **preserved from Optimus** (renamed to Baseline where appropriate, but structurally intact):
+- **Model / concern / controller / route patterns** — follow Optimus conventions for namespacing, resource routing, controller inheritance, and concern composition. Do not diverge into stray patterns.
+- **Shared concerns** — `Notification`, `Loggable`, `Archivable` concerns and their accompanying migrations, helpers, and specs.
+- **Member and collection export patterns** — the Optimus data-model export convention (CSV/JSON member exports and collection exports) is the standard for all Baseline data models.
+- **Enumeration module pattern** — enums are declared via dedicated modules (e.g., `Enums::MatchFormat`, `Enums::ImportKind`), not inline `enum :foo, { ... }` calls scattered through models. Every enum listed in §3 uses this pattern.
+- **Ransack** as the search/filter standard on every index page (admin and public).
+- **Claude Code configuration** — `CLAUDE.md`, `AGENT.md`, `.claude/` settings, hooks, and any Claude Code harness configuration carried over from Optimus, with MPI-specific references rewritten for Baseline.
+- **Authentication + roles scaffolding** — Devise, Pundit, `system_roles`, `system_permissions`, `system_role_permissions` as noted in §3.
+- **Testing harness** — RSpec, FactoryBot, Capybara, shoulda-matchers, timecop, VCR, WebMock configuration, plus any Optimus spec helpers and support files.
+
+**Phase 1** — Schema foundation. Fresh Baseline schema derived from §3. Models, validations, factories, request specs, feature specs. Every data model includes the `Notification`, `Loggable`, and `Archivable` concerns and the member/collection export interface from the Optimus pattern. Enum columns are backed by enum modules (per Phase 0 convention). Seed a minimum of one league + a few players to exercise the schema. No Courtview migration (decommissioned).
 
 **Phase 2** — Wireframes, all pages, no style. Hybrid Claude Design + Claude Code workflow. Per-page: 10-second-answer above the fold, scan pattern, anti-requirements, mobile vs desktop layout. Output: `docs/designs/*.md` IA specs + draft Rails views (unstyled HTML + Bootstrap grid only).
 
@@ -465,15 +477,23 @@ Each phase has a dedicated issue in the [`Baseline Setup`](https://github.com/us
 
 ## 8. Testing Posture
 
-RSpec + Capybara + FactoryBot + shoulda-matchers + timecop + VCR + WebMock.
+**Testing is a first-class concern from v0 onward.** Every code change — new file, edit, bug fix, refactor — must be accompanied by a determination: either a new spec is written to improve coverage, or existing specs are adjusted to reflect the change. This rule applies to all phases, not just Phase 11 polish.
 
-- **Model specs** — validations, key scopes, player resolution algorithm, H2H cache refresh logic. Must-have.
+Stack: RSpec + Capybara + FactoryBot + shoulda-matchers + timecop + VCR + WebMock.
+
+- **Model specs** — validations, associations, scopes, concerns (Notification, Loggable, Archivable), enum modules, business logic (player resolution algorithm, H2H cache refresh logic, member/collection export methods). Every model has a spec.
+- **Request specs** — every controller action. Covers routing, authentication, Pundit authorization, response codes, and response payloads. This is the primary controller coverage layer — not skipped.
+- **Feature specs (Capybara)** — every user-facing interface (dashboard, scouting matrix, player profile, H2H, team profile, team-vs-team, imports flow, admin CRUD surfaces). Cover the golden path plus critical edge cases per page.
 - **Policy specs** — one per Pundit policy. Cheap and critical for a role-locked app.
-- **Service specs** — import pipeline parsers (stub the Claude vision response; test the pipeline around it).
-- **System specs** — one "happy path" per public page. Thin coverage; Capybara is slow, don't over-invest.
-- **Request specs** — skip for v0 unless a specific endpoint has logic outside a policy.
+- **Service / job specs** — import pipeline parsers (stub the Claude vision response; test the pipeline around it), H2H cache refresh job, any background job.
 
-No coverage threshold. Fix bugs by adding a spec, not by targeting a number.
+**Factories (FactoryBot):**
+- One factory per model, mirroring the Optimus pattern.
+- Efficient by default — minimal required attributes, `build` over `create` where possible, `build_stubbed` in unit specs where DB round-trips are unnecessary.
+- Use traits for variants (`:archived`, `:with_grades`, `:captain`, etc.) rather than duplicating factories.
+- Associations declared lazily to avoid cascade creation in unrelated specs.
+
+No coverage threshold. Fix bugs by adding a spec, not by targeting a number. But **no code lands without its corresponding test decision** being made and recorded in the PR.
 
 ---
 
