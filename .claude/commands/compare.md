@@ -3,7 +3,7 @@ Compare the agent configuration standards between Baseline and the target projec
 ## Steps
 
 1. **Resolve the target project path**:
-   - Read `.claude/projects.json` to find the project by name (avails, sfa, garden, harvest)
+   - Read `.claude/projects.json` to find the project by name (baseline)
    - Read `.claude/projects.local.json` for local paths if available
    - If no local path, use `gh api` to fetch files from the GitHub repo
 

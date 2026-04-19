@@ -27,7 +27,7 @@ Roles are **contexts loaded into the same agent**, not separate agents. Each rol
 | 5 | Testing & QA | Rules (`spec/`) + review skills | All apps |
 | 6 | Infrastructure | Skill (triggered, not always-loaded) | Infra + deploy configs |
 | 7 | External Services | Skill (per-service, on-demand) | Varies by app |
-| 8 | Digital Presence Optimization | Skill (triggered for public-facing work) | Garden, Harvest, SFA |
+| 8 | Digital Presence Optimization | Skill (triggered for public-facing work) | Public-facing surfaces |
 
 ## Workflow
 
