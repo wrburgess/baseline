@@ -490,6 +490,12 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
+    sentry-rails (5.28.1)
+      railties (>= 5.0)
+      sentry-ruby (~> 5.28.1)
+    sentry-ruby (5.28.1)
+      bigdecimal
+      concurrent-ruby (~> 1.0, >= 1.0.2)
     shoulda-matchers (7.0.1)
       activesupport (>= 7.1)
     simple_form (5.4.1)
@@ -628,6 +634,8 @@ DEPENDENCIES
   rubocop-rspec (= 3.9.0)
   rubocop-rspec_rails (= 2.32.0)
   selenium-webdriver (= 4.43.0)
+  sentry-rails (~> 5.24)
+  sentry-ruby (~> 5.24)
   shoulda-matchers (= 7.0.1)
   simple_form (= 5.4.1)
   simplecov (= 0.22.0)
@@ -821,6 +829,8 @@ CHECKSUMS
   safely_block (1.0.0) sha256=bea80e084e620adeada62fd98cf461bbb9888d40dc0f06d337df9d01e1a658e5
   securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1
   selenium-webdriver (4.43.0) sha256=a634377b964b701c6ac0a009ce3a08fa34ec1e1e7fe9a6d57e3088d14529a65c
+  sentry-rails (5.28.1) sha256=43a5f884622c60fa459ba05dc8bd22fbd5f28daaced1d00dbcfc4669eaf93807
+  sentry-ruby (5.28.1) sha256=1162d474271e8b82202c984b1116db234007a084c5b73293e921468898d07e99
   shoulda-matchers (7.0.1) sha256=b4bfd8744c10e0a36c8ac1a687f921ee7e25ed529e50488d61b79a8688749c77
   simple_form (5.4.1) sha256=58c3d229034c7e5545035c3271b6f030ef730c340b9d7d8eb730e0a385b20808
   simplecov (0.22.0) sha256=fe2622c7834ff23b98066bb0a854284b2729a569ac659f82621fc22ef36213a5
