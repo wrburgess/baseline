@@ -76,7 +76,7 @@ describe Admin::NavBar::Component, type: :component do
       expect(page).to have_link('Messages', href: '/admin/notification_messages')
       expect(page).to have_link('Queue Items', href: '/admin/notification_queue_items')
       expect(page).to have_link('Sign out', href: '/users/sign_out')
-      expect(page).to have_text('Optimus')
+      expect(page).to have_text('Baseline')
     end
   end
 end

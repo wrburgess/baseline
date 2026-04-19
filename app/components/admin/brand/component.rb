@@ -1,5 +1,5 @@
 class Admin::Brand::Component < ApplicationComponent
-  def initialize(brand_name: "Optimus Admin", environment_name: "development", classes: "navbar-brand")
+  def initialize(brand_name: "Baseline Admin", environment_name: "development", classes: "navbar-brand")
     @brand_name = brand_name
     @environment_name = environment_name
     @classes = classes
