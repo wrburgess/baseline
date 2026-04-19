@@ -437,6 +437,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"baseline@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "baseline@workspace:."
+  dependencies:
+    "@hotwired/stimulus": "npm:3.2.2"
+    "@hotwired/turbo-rails": "npm:8.0.23"
+    "@popperjs/core": "npm:2.11.8"
+    bootstrap: "npm:5.3.8"
+    bootstrap-icons: "npm:1.13.1"
+    esbuild: "npm:0.28.0"
+    sass: "npm:1.99.0"
+    tom-select: "npm:2.6.0"
+  languageName: unknown
+  linkType: soft
+
 "bootstrap-icons@npm:1.13.1":
   version: 1.13.1
   resolution: "bootstrap-icons@npm:1.13.1"
@@ -955,21 +970,6 @@ __metadata:
   checksum: 10c0/1822eb6f9b020ef6f7a7516d7b64a8036e09666ea55ac40416c36e4b2b343122c3cff0e2f085675f53de1d2db99a2a89a60ccea1d120bcd6a5347bf6ceb4a7fd
   languageName: node
   linkType: hard
-
-"optimus@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "optimus@workspace:."
-  dependencies:
-    "@hotwired/stimulus": "npm:3.2.2"
-    "@hotwired/turbo-rails": "npm:8.0.23"
-    "@popperjs/core": "npm:2.11.8"
-    bootstrap: "npm:5.3.8"
-    bootstrap-icons: "npm:1.13.1"
-    esbuild: "npm:0.28.0"
-    sass: "npm:1.99.0"
-    tom-select: "npm:2.6.0"
-  languageName: unknown
-  linkType: soft
 
 "p-map@npm:^7.0.2":
   version: 7.0.4
