@@ -209,7 +209,6 @@ Agents should follow this numbered priority order when seeking information:
 
 2. **In-repo `docs/`** (read on demand, zero boot cost)
    - `docs/architecture/overview.md` — system architecture
-   - `docs/architecture/mpi-infrastructure.md` — infra and config reference
    - Domain-specific docs (permissions, notifications, deployment)
    - Standards docs (`docs/standards/`)
 

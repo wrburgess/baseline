@@ -2,7 +2,6 @@
 
 This guide is for developers working on MPI Rails applications alongside AI collaborators (ACs). It covers your role in the development workflow, how to direct AI agents, what to review, and how to set up your environment.
 
-For the full infrastructure reference (AC configuration, CI/CD internals, repository map), see [docs/architecture/mpi-infrastructure.md](architecture/mpi-infrastructure.md).
 
 ## Terminology
 
@@ -302,11 +301,9 @@ This runs `foreman` with `Procfile.development` on port 8000.
 
 | Document | What It Covers |
 |----------|---------------|
-| [MPI Infrastructure Guide](architecture/mpi-infrastructure.md) | Full infrastructure reference (repos, AC config, CI/CD, quality tooling) |
 | [Architecture Overview](architecture/overview.md) | Optimus-specific models, controllers, patterns |
 | [Agent Workflow](architecture/agent-workflow.md) | AC roles, multi-agent patterns, Copilot setup |
 | [HC Review Checklist](standards/hc-review-checklist.md) | Detailed review checklist for HC PR reviews |
 | [Testing Standards](standards/testing.md) | RSpec conventions, factory patterns, shared contexts |
 | [Code Review Standards](standards/code-review.md) | Review checklist for all reviewers |
 | [Style Standards](standards/style.md) | Ruby, CSS, JS, ERB conventions |
-| [Cross-Repo Sync](standards/cross-repo-sync.md) | How standards stay aligned across MPI apps |

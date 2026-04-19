@@ -17,7 +17,6 @@ Compare the agent configuration standards between Baseline and the target projec
    - `docs/standards/documentation.md`
    - `docs/standards/style.md`
    - `docs/standards/hc-review-checklist.md`
-   - `docs/standards/cross-repo-sync.md`
    - `docs/architecture/agent-workflow.md`
 
 3. **Read the target project's corresponding files** (if they exist)

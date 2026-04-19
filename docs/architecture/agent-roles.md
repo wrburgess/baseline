@@ -217,7 +217,7 @@ Every role inherits this baseline understanding:
 **Construct Mapping:**
 - Skill: Infrastructure / deployment operations (triggered, not always-loaded)
 - Skill: `db-health` diagnostic
-- Reference: `docs/deployment.md`, `docs/architecture/mpi-infrastructure.md`
+- Reference: `docs/deployment.md`
 
 **Cross-Repo Applicability:** All apps (deployment), plus dedicated `mpi-infrastructure` and `mpi-application-workflows` repos
 
