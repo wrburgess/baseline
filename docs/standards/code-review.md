@@ -1,4 +1,4 @@
-# MPI Code Review Standards
+# Baseline Code Review Standards
 
 These standards apply to all reviewers: Human Contributors (HC), Claude Code (CC), and GitHub Copilot.
 

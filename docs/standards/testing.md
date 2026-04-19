@@ -1,4 +1,4 @@
-# MPI Testing Standards
+# Baseline Testing Standards
 
 ## Test Framework
 

@@ -1,8 +1,8 @@
-# MPI Hotwire Patterns
+# Baseline Hotwire Patterns
 
 ## Overview
 
-Optimus uses Hotwire (Turbo + Stimulus) for progressive enhancement of server-rendered HTML. The default approach is **conservative**: Turbo Drive for navigation, Stimulus for interactive behavior, and Turbo Frames/Streams only when they provide clear UX benefit over a full page load.
+Baseline uses Hotwire (Turbo + Stimulus) for progressive enhancement of server-rendered HTML. The default approach is **conservative**: Turbo Drive for navigation, Stimulus for interactive behavior, and Turbo Frames/Streams only when they provide clear UX benefit over a full page load.
 
 ## When to Use Each Tool
 

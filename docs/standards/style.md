@@ -1,4 +1,4 @@
-# MPI Style Standards
+# Baseline Style Standards
 
 ## Ruby Style
 

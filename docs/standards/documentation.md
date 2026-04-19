@@ -1,4 +1,4 @@
-# MPI Documentation Standards
+# Baseline Documentation Standards
 
 ## When to Write Documentation
 

@@ -1,6 +1,6 @@
 # Anti-Patterns — Canonical Inventory
 
-Single source of truth for all negative instructions enforced across the MPI application suite. Agent configuration files (`CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `.claude/rules/*.md`) derive their anti-pattern sections from this inventory.
+Single source of truth for all negative instructions enforced across the Baseline application suite. Agent configuration files (`CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `.claude/rules/*.md`) derive their anti-pattern sections from this inventory.
 
 When adding or modifying rules, update this file first, then propagate to the relevant surfaces.
 

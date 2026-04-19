@@ -1,4 +1,4 @@
-# MPI Design Standards
+# Baseline Design Standards
 
 ## UI Framework
 

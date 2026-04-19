@@ -1,6 +1,6 @@
 # Memory Management Standards
 
-Standards for managing Claude Code auto-memory (`~/.claude/projects/*/memory/`) across MPI projects. Based on research findings F5.1–F5.5 from `docs/research/ai-best-practices.md`.
+Standards for managing Claude Code auto-memory (`~/.claude/projects/*/memory/`) across Baseline projects. Based on research findings F5.1–F5.5 from `docs/research/ai-best-practices.md`.
 
 ## Auto-Memory vs Repo-Tracked Docs
 
@@ -135,7 +135,7 @@ Run `/memory-review` — this command audits the current project's memory and re
 
 ## Cross-Project Standards
 
-- **Per-project memory** — Each MPI project has its own memory directory. No sharing between projects.
+- **Per-project memory** — Each Baseline project has its own memory directory. No sharing between projects.
 - **Consistent structure** — All projects should follow these same standards
 - **Worktree memory is ephemeral** — Memory created in worktree agents is not preserved. Don't rely on it persisting.
 - **Per-machine** — Memory is local to each development machine. Content that must be portable belongs in the repo, not memory.

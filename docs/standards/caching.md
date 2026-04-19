@@ -1,4 +1,4 @@
-# MPI Caching Standards
+# Baseline Caching Standards
 
 ## Cache Store Configuration
 
@@ -167,7 +167,7 @@ Rails.cache.fetch("user_#{user.id}_permissions", expires_in: 15.minutes) do
 end
 ```
 
-Note: Optimus already implements per-request permission caching via `@permissions_cache` in the `User` model (`app/models/user.rb`). This is preferred over `Rails.cache` for request-scoped data because it doesn't persist stale permissions across requests.
+Note: Baseline already implements per-request permission caching via `@permissions_cache` in the `User` model (`app/models/user.rb`). This is preferred over `Rails.cache` for request-scoped data because it doesn't persist stale permissions across requests.
 
 ## When to Cache
 

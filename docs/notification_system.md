@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Optimus Notification System is a custom Topic/Subscriber pattern implementation inspired by AWS SNS. It allows the application to send notifications to users through multiple channels (email, SMS, chat) with flexible delivery scheduling (immediate, hourly summaries, daily summaries).
+The Baseline Notification System is a custom Topic/Subscriber pattern implementation inspired by AWS SNS. It allows the application to send notifications to users through multiple channels (email, SMS, chat) with flexible delivery scheduling (immediate, hourly summaries, daily summaries).
 
 ## Architecture
 

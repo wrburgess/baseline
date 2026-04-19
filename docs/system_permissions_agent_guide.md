@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This guide provides AI agents with the context needed to support and improve the System Permission system in the Optimus codebase.
+This guide provides AI agents with the context needed to support and improve the System Permission system in the Baseline codebase.
 
-**Related:** [PR #72 - Per-Request Permission Memoization](https://github.com/mpimedia/optimus/pull/72) | [Issue #70](https://github.com/mpimedia/optimus/issues/70)
+**Related:** PR #72 - Per-Request Permission Memoization | Issue #70
 
 ---
 

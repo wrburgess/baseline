@@ -1,8 +1,8 @@
-# MPI Development Lifecycle
+# Baseline Development Lifecycle
 
 ## Purpose
 
-Defines how an AI Contributor (AC) works from problem definition through delivery across all MPI projects. Designed to be model-agnostic — the stages and quality gates stay the same as AC capabilities improve. What changes over time is which gates require external review vs. self-review.
+Defines how an AI Contributor (AC) works from problem definition through delivery across all Baseline projects. Designed to be model-agnostic — the stages and quality gates stay the same as AC capabilities improve. What changes over time is which gates require external review vs. self-review.
 
 ## Roles
 

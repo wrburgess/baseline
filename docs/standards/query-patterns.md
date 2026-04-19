@@ -1,4 +1,4 @@
-# MPI ActiveRecord Query Patterns
+# Baseline ActiveRecord Query Patterns
 
 ## Eager Loading
 

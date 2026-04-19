@@ -1,10 +1,10 @@
-# Optimus Architecture Overview
+# Baseline Architecture Overview
 
-This document provides a comprehensive overview of the Optimus application architecture for AI agents and developers working in the codebase.
+This document provides a comprehensive overview of the Baseline application architecture for AI agents and developers working in the codebase.
 
 ## Application Purpose
 
-Optimus is the Rails application template and reference implementation for the MPI Media application ecosystem. It defines the coding standards, architectural patterns, and development workflows used across all MPI projects (avails, sfa, garden, harvest).
+Baseline is the Rails application template and reference implementation. It defines the coding standards, architectural patterns, and development workflows used across all projects.
 
 ## Tech Stack
 
