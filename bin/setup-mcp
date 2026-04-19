@@ -9,11 +9,10 @@
 # Requires:
 #   - 1Password CLI (`brew install --cask 1password-cli`)
 #   - CLI integration enabled in 1Password app (Settings > Developer > Integrate with 1Password CLI)
-#   - Access to the "Application Development" vault on mpimediagroup.1password.com
+#   - BASELINE_OP_ACCOUNT env var set to your 1Password account (e.g. my.1password.com)
+#   - Access to the vault specified by BASELINE_OP_VAULT (default: "Application Development")
 #
-# MCP Server Profile (Optimized — see docs/architecture/mcp-integration-audit.md):
-#   - Cloudflare (Code Mode) — full API access via 2 tools
-#   - Honeybadger — error tracking across MPI projects
+# MCP Server Profile: Cloudflare (Code Mode)
 #
 # Removed servers (use CLI tools instead):
 #   - GitHub → use `gh` CLI (`gh auth login`)
@@ -28,8 +27,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 EXAMPLE_FILE="$PROJECT_DIR/.mcp.json.example"
 OUTPUT_FILE="$PROJECT_DIR/.mcp.json"
-OP_ACCOUNT="mpimediagroup.1password.com"
-OP_VAULT="Application Development"
+OP_ACCOUNT="${BASELINE_OP_ACCOUNT:?Set BASELINE_OP_ACCOUNT env var (e.g. my.1password.com)}"
+OP_VAULT="${BASELINE_OP_VAULT:-Application Development}"
 DRY_RUN=false
 
 if [[ "${1:-}" == "--dry-run" ]]; then
@@ -51,14 +50,12 @@ if ! command -v npx &>/dev/null; then
   exit 1
 fi
 
-echo "MCP Server Profile: Cloudflare (Code Mode), Honeybadger"
-echo "See docs/architecture/mcp-integration-audit.md for rationale"
+echo "MCP Server Profile: Cloudflare (Code Mode)"
 echo ""
 
 if [[ "$DRY_RUN" == true ]]; then
   echo "[DRY RUN] Would fetch the following credentials from 1Password:"
   echo "  - Cloudflare API Key  (op://$OP_VAULT/Cloudflare API Key/credential)"
-  echo "  - Honeybadger API Key (op://$OP_VAULT/Honeybadger API Key/credential)"
   echo ""
   echo "[DRY RUN] Would write: $OUTPUT_FILE"
   echo "[DRY RUN] Template: $EXAMPLE_FILE"
@@ -78,14 +75,12 @@ echo ""
 
 # Fetch all credentials in one burst so 1Password keeps the session active
 CLOUDFLARE_API_TOKEN=$(op read "op://$OP_VAULT/Cloudflare API Key/credential" --account="$OP_ACCOUNT") || { echo "Failed to read Cloudflare API Key" >&2; exit 1; }
-HONEYBADGER_API_KEY=$(op read "op://$OP_VAULT/Honeybadger API Key/credential" --account="$OP_ACCOUNT") || { echo "Failed to read Honeybadger API Key" >&2; exit 1; }
 
 echo "All credentials fetched successfully."
 
 # Read the example file and substitute placeholders with real values
 content=$(<"$EXAMPLE_FILE")
 content="${content//\$\{CLOUDFLARE_API_TOKEN\}/$CLOUDFLARE_API_TOKEN}"
-content="${content//\$\{HONEYBADGER_API_KEY\}/$HONEYBADGER_API_KEY}"
 
 printf '%s\n' "$content" > "$OUTPUT_FILE"
 chmod 600 "$OUTPUT_FILE"

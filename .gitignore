@@ -54,6 +54,3 @@ spec/examples.txt
 
 # MCP configuration (contains API keys)
 .mcp.json
-
-# Honeybadger CLI configuration (contains API keys)
-.honeybadger-cli.yaml

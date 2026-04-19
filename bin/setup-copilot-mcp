@@ -28,16 +28,11 @@ set -euo pipefail
 # ============================================================================
 # CONFIGURATION — edit these values
 # ============================================================================
-ORG="mpimedia"
+ORG="baseline"
 
 # Repos to configure (add/remove as needed)
 REPOS=(
-  "garden"
-  "wpa_film_library"
-  "avails_server"
-  "harvest"
-  "optimus"
-  "markaz-crm"
+  "baseline"
 )
 
 # Path to your copilot-setup-steps.yml (relative to this script's location in bin/)
@@ -52,7 +47,6 @@ SECRET_NAMES=(
   "COPILOT_MCP_AWS_ACCESS_KEY_ID"
   "COPILOT_MCP_AWS_SECRET_ACCESS_KEY"
   "COPILOT_MCP_AWS_REGION"
-  "COPILOT_MCP_HONEYBADGER_API_KEY"
 )
 
 # ============================================================================
