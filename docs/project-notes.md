@@ -7,6 +7,7 @@
 - This project is a personal and public project locally at `aaa/baseline` and on the `wrburgess/baseline` GitHub repo. "Public" means the source code is open; the deployed app is **always behind authentication** — no unauthenticated surfaces.
 - Deployed at `baseline.kc.tennis`.
 - Full spec: [`docs/spec.md`](./spec.md).
+- **Developer discipline authoritative source:** retained `.claude/rules/*.md` and `docs/standards/*.md` from the Optimus template (scrubbed for MPI references in Phase 0). Those files govern models, controllers, routes, forms, testing, migrations, security, self-review. `docs/spec.md` covers product + schema; on conflict with rules files, the rules files win.
 
 ## Getting Started
 
@@ -146,6 +147,9 @@
 - **Schema is derived, not ported.** Fresh data model based on requirements + USTA domain realities (flights, sub-flights, tri-level, combo formats, post-season levels).
 - **No pre-emptive features.** v0 ships the smallest viable scouting tool. v1 ideas stay in the deferred list.
 - **Two ship milestones:** dogfood (end of Phase 6), invite-a-captain (end of Phase 11).
+- **Optimus conventions are authoritative, not optional.** The `.claude/rules/*.md` and `docs/standards/*.md` files carried from the Optimus template govern model structure, concerns, controllers, routes, forms, asset pipelines, migrations, security, and self-review. Deviations need explicit justification in `/cplan`.
+- **Testing is top priority, from v0 onward.** No code is written or modified without first determining whether a test must be written (new coverage) or adjusted (existing coverage). This test-intent-per-change rule extends Optimus's Definition of Done — specs are not an afterthought, they are part of the design of the change. `.claude/rules/testing.md` governs structure; see `docs/spec.md` §8 for the test-intent rule specifically.
+- **Pre-commit gates enforced.** `rubocop -a && rspec && brakeman && bundler-audit` must pass before every commit. No exceptions.
 
 ### Approach
 

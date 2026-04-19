@@ -62,6 +62,14 @@ It is **not** a lineup optimizer, a prediction model, a roster-management tool, 
 | 33 | Scheduled fixtures | First-class `scheduled_fixtures` table. Pre-season fixture list imported via `kind: league_schedule`. `team_matches.fixture_id` (nullable FK) links a played match to its fixture when imported. Dashboard "next match" reads from `scheduled_fixtures` |
 | 34 | Search shell vs search implementation | Persistent nav shell from Phase 3; functional pg_trgm autocomplete in Phase 6; polish in Phase 11. |
 | 35 | H2H notes visibility | Captain-collaborative — shared among all authenticated captains. Not per-user-private |
+| 36 | Optimus conventions authoritative | Retained `.claude/rules/*.md` and `docs/standards/*.md` are the authoritative source for developer discipline (models, concerns, controllers, routes, forms, testing, migrations, security, self-review). `docs/spec.md` covers product + schema only. On conflict, the rules files win |
+| 37 | Concerns on every model | Every data model includes `Archivable`, `Loggable`, and `Notifiable` (where applicable) per Optimus pattern |
+| 38 | Route concerns on admin resources | Every admin `resources :foo` line includes `concerns: [:archivable, :collection_exportable, :member_exportable, :copyable]` unless justified otherwise during `/cplan` |
+| 39 | Enum storage pattern | All enums managed via Optimus pattern — module in `app/modules/` + concern in `app/models/concerns/`. Reference: `app/modules/notification_distribution_methods.rb`. Inline string enums on a model are not acceptable |
+| 40 | Asset pipeline separation | Two separate pipelines — admin (`admin.scss`, `app/javascript/admin/`, `admin.html.erb` layout) and public (`application.html.erb`). Separate Stimulus Application instances per AGENTS.md |
+| 41 | Admin form conventions | Per AGENTS.md / `.claude/rules/backend.md`: `simple_form_for([:admin, instance])`, `tom_select` for selects (`wrapper: :tom_select_label_inset`), `floating_label_form` for text, `custom_boolean_switch` for booleans, `datepicker` for dates, two-column `row > col-12 col-lg-6` layout |
+| 42 | Test-intent-per-change | Before any code is written or modified, the agent determines whether a test must be written (new coverage) or adjusted (existing coverage). Changes without an explicit test-intent determination are not acceptable. Applies from v0 onward, without exception |
+| 43 | Pre-commit gates | `bundle exec rubocop -a && bundle exec rspec && bin/brakeman --no-pager -q && bin/bundler-audit check` — all four must pass before every commit, no exceptions |
 
 ---
 
@@ -123,6 +131,11 @@ role                   string (enum)           # player | co_captain | captain
 ```
 
 ### Player identity & ratings
+
+**Conventions applied to every model below:**
+- Includes `Archivable` (soft delete via `archive!` / `unarchive!`), `Loggable` (audit trail into `data_logs`), and `Notifiable` (event hooks) where applicable
+- Enumerated columns are backed by Optimus's enum pattern: module in `app/modules/` + concern in `app/models/concerns/` (reference: `app/modules/notification_distribution_methods.rb`). Inline string enums are not acceptable.
+- Every admin resource route is declared with `concerns: [:archivable, :collection_exportable, :member_exportable, :copyable]` unless a specific concern is explicitly excluded during `/cplan`.
 
 **`players`**
 ```
@@ -395,7 +408,15 @@ Card content: team name · league name · format (e.g., "2S+3D") · roster size 
 
 ### Admin surfaces
 
-Full-design, not default scaffolds:
+Full-design, not default scaffolds. All admin forms use Optimus conventions (from AGENTS.md + `.claude/rules/backend.md`):
+- `simple_form_for([:admin, instance])` with `tom_select` for selects (`wrapper: :tom_select_label_inset`), `floating_label_form` for text fields, `custom_boolean_switch` for booleans, `datepicker` for date inputs
+- Two-column layout: `row > col-12 col-lg-6`
+- Admin controllers inherit from `AdminController` (Devise + Pundit)
+- Reference: `app/views/admin/system_groups/_form.html.erb` in the Optimus template
+
+Admin uses its own asset pipeline (`admin.scss`, `app/javascript/admin/`, `admin.html.erb` layout) — separate from the public pipeline per AGENTS.md.
+
+
 - `Admin::Players` — CRUD + merge + "needs disambiguation" queue
 - `Admin::Grades` — timeline-style view, inline edit, bulk-import for quarterly refreshes
 - `Admin::PlayerAliases` — view/add/remove
@@ -465,15 +486,50 @@ Each phase has a dedicated issue in the [`Baseline Setup`](https://github.com/us
 
 ## 8. Testing Posture
 
-RSpec + Capybara + FactoryBot + shoulda-matchers + timecop + VCR + WebMock.
+**Testing discipline is inherited wholesale from `.claude/rules/testing.md` and `docs/standards/testing.md` (retained from the Optimus template in Phase 0).** The "Definition of Done" in those rules applies to Baseline without modification. Framework: RSpec + FactoryBot + Capybara (Selenium for `js: true`) + shoulda-matchers + timecop + VCR + WebMock + Bullet + SimpleCov.
 
-- **Model specs** — validations, key scopes, player resolution algorithm, H2H cache refresh logic. Must-have.
-- **Policy specs** — one per Pundit policy. Cheap and critical for a role-locked app.
-- **Service specs** — import pipeline parsers (stub the Claude vision response; test the pipeline around it).
-- **System specs** — one "happy path" per public page. Thin coverage; Capybara is slow, don't over-invest.
-- **Request specs** — skip for v0 unless a specific endpoint has logic outside a policy.
+### Test-intent-per-change (Baseline-specific addition)
 
-No coverage threshold. Fix bugs by adding a spec, not by targeting a number.
+**Before any code is written or modified, the agent determines:**
+1. Does a new test need to be written to cover the change?
+2. Does an existing test need to be adjusted to reflect new behavior?
+3. Does this change remove behavior that currently has coverage (and therefore coverage should be removed too)?
+
+The agent states the test intent explicitly in `/cplan` output or in the PR description for smaller changes. Code changes that arrive without an explicit test-intent determination are rejected during self-review.
+
+This rule extends (does not replace) the Optimus "Definition of Done" — Optimus says "tests must be written to protect the change"; Baseline adds "tests must be *considered* before the change is written." Applies from v0 onward, without exception.
+
+### Definition of Done (from Optimus, mandatory)
+
+- Model specs cover all validations, associations, scopes, callbacks, public methods, enumerables
+- Request specs for every controller action, 3 auth contexts (authenticated + authorized, unauthenticated, authenticated + unauthorized) × full assertions (response content, DB side effects, flash, redirect, error cases)
+- Feature specs cover every controller action type (create / edit / show / index / archive) + every admin form input type (`tom_select`, text, textarea, boolean switch, datepicker)
+- Policy specs test both grant and deny for every action (index?, show?, new?, create?, edit?, update?, destroy?, archive?, unarchive?)
+- External HTTP via VCR; never live calls in tests
+- Shared examples applied: `it_behaves_like "archivable"`, `"loggable"`, etc., on models that include those concerns
+- SimpleCov coverage enforced in CI with branch coverage using a ratcheting baseline (starts at 66% per Optimus, long-term target 90%)
+- Bullet `raise = true` in test — specs fail on N+1 or unused eager loading
+
+### Pre-commit gates
+
+All four must pass before every commit, no exceptions:
+
+```
+bundle exec rubocop -a
+bundle exec rspec
+bin/brakeman --no-pager -q
+bin/bundler-audit check
+```
+
+### Anti-patterns (from `.claude/rules/testing.md`)
+
+- Never use fixtures — FactoryBot only
+- Never use controller specs — request specs only
+- Never test private methods directly — test through the public interface
+- Never use `sleep` — use `freeze_time` or `travel_to` for time-dependent tests
+- Never hard-code IDs or timestamps
+- Never skip edge cases because "they're unlikely"
+- Never say "needs manual testing" without proving the automated stack can't handle it
 
 ---
 
