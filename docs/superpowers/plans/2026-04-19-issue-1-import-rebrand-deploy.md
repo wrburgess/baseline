@@ -116,7 +116,12 @@ Numbers below come from static grep against the template source at `/Users/wrbur
 - **Issue's explicit delete targets:** 2 named files + ".claude/projects.json cross-repo mappings" + "cross-repo setup sections"
 - **Files NOT on either issue list but containing MPI refs:** 15 (covered by P2.D2 above)
 
-**False-positive sources to exclude from rg AC:**
+**Files exempted from the grep AC (legitimate Optimus mentions, NOT scrub targets):**
+- `docs/project-notes.md` — baseline-authored planning doc; lines 6 and 10 reference Optimus as **provenance** ("This project will utilize the Optimus template at `aaa/optimus-base` as its starting point"). Removing those references would gut the doc's meaning. Provenance is correct.
+- `docs/spec.md` — baseline-authored design doc; lines 65–69 cite "Optimus conventions authoritative", "Optimus pattern" for concerns/enums. These are intentional design decisions documenting where the patterns came from.
+- `docs/superpowers/plans/**` — implementation plans (this file and any future plan) that describe the scrub itself; they MUST mention `optimus`/`mpi` to talk about what to remove.
+
+**False-positive sources also excluded from grep AC:**
 - `.yarn/releases/yarn-4.13.0.cjs` — vendored yarn binary, 19 substring matches in minified JS
 - `yarn.lock` — 2 matches, both `"optimus@workspace:."` — will regenerate from `package.json` rename
 - Git history / commit messages — not matched by rg against tracked files
@@ -1253,11 +1258,15 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>" || echo "n
 
 Executes the issue's Acceptance Criteria greps. Must all pass before proceeding to Phase 3.
 
+**Exemption note:** All greps below exempt three legitimate-mention paths: `docs/project-notes.md`, `docs/spec.md`, and `docs/superpowers/**`. See "Files exempted from the grep AC" in the inventory section above for rationale.
+
 - [ ] **Step 1: Primary grep — optimus/mpi word-boundary.**
 
   Run:
   ```bash
-  git ls-files | grep -vE '^(\.yarn/releases/|yarn\.lock$)' | xargs rg -i '\b(mpi|optimus)\b'
+  git ls-files \
+    | grep -vE '^(\.yarn/releases/|yarn\.lock$|docs/project-notes\.md$|docs/spec\.md$|docs/superpowers/)' \
+    | xargs rg -i '\b(mpi|optimus)\b'
   ```
   Expected: zero matches. If the `yarn.lock` still has `"optimus@workspace:."`, Task 2B Step 4's yarn install didn't rerun — redo it.
 
@@ -1265,7 +1274,9 @@ Executes the issue's Acceptance Criteria greps. Must all pass before proceeding 
 
   Run:
   ```bash
-  git ls-files | grep -vE '^(\.yarn/releases/|yarn\.lock$)' | xargs rg -i '(mpi|optimus|mpimedia)'
+  git ls-files \
+    | grep -vE '^(\.yarn/releases/|yarn\.lock$|docs/project-notes\.md$|docs/spec\.md$|docs/superpowers/)' \
+    | xargs rg -i '(mpi|optimus|mpimedia)'
   ```
   Expected: zero matches. This is stricter than the issue's AC and catches substring bugs (e.g., `optimus_storage` had we missed it).
 
@@ -1273,7 +1284,9 @@ Executes the issue's Acceptance Criteria greps. Must all pass before proceeding 
 
   Run:
   ```bash
-  git ls-files | xargs rg -i '\b(avails|sfa|garden|harvest)\b'
+  git ls-files \
+    | grep -vE '^(docs/project-notes\.md$|docs/spec\.md$|docs/superpowers/)' \
+    | xargs rg -i '\b(avails|sfa|garden|harvest)\b'
   ```
   Expected: zero matches. If `garden`/`harvest` appears in a legitimate non-repo context (English words), verify and leave; note in PR.
 
@@ -1281,7 +1294,9 @@ Executes the issue's Acceptance Criteria greps. Must all pass before proceeding 
 
   Run:
   ```bash
-  rg 'mpi_projects' .
+  git ls-files \
+    | grep -vE '^(docs/project-notes\.md$|docs/spec\.md$|docs/superpowers/)' \
+    | xargs rg 'mpi_projects'
   ```
   Expected: zero matches.
 
@@ -1289,7 +1304,9 @@ Executes the issue's Acceptance Criteria greps. Must all pass before proceeding 
 
   Run:
   ```bash
-  rg -i 'mpimedia' .
+  git ls-files \
+    | grep -vE '^(docs/project-notes\.md$|docs/spec\.md$|docs/superpowers/)' \
+    | xargs rg -i 'mpimedia'
   ```
   Expected: zero matches.
 
@@ -1839,18 +1856,22 @@ EXCLUDES=(
 
 ## Appendix B — Grep AC one-liner reference
 
+All greps exempt: `.yarn/releases/`, `yarn.lock`, `docs/project-notes.md`, `docs/spec.md`, `docs/superpowers/`.
+
 ```bash
+EXEMPT='^(\.yarn/releases/|yarn\.lock$|docs/project-notes\.md$|docs/spec\.md$|docs/superpowers/)'
+
 # Primary (per issue AC)
-git ls-files | grep -vE '^(\.yarn/releases/|yarn\.lock$)' | xargs rg -i '\b(mpi|optimus)\b'
+git ls-files | grep -vE "$EXEMPT" | xargs rg -i '\b(mpi|optimus)\b'
 
 # Substring-strict (catches `optimus_development` etc.)
-git ls-files | grep -vE '^(\.yarn/releases/|yarn\.lock$)' | xargs rg -i '(mpi|optimus|mpimedia)'
+git ls-files | grep -vE "$EXEMPT" | xargs rg -i '(mpi|optimus|mpimedia)'
 
 # Sibling repos
-git ls-files | xargs rg -i '\b(avails|sfa|garden|harvest)\b'
+git ls-files | grep -vE "$EXEMPT" | xargs rg -i '\b(avails|sfa|garden|harvest)\b'
 
 # Legacy key refs
-rg 'mpi_projects|mpimedia' .
+git ls-files | grep -vE "$EXEMPT" | xargs rg 'mpi_projects'
 ```
 
 All four must return zero matches before Phase 2 completes.
