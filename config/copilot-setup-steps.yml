@@ -1,0 +1,72 @@
+# .github/workflows/copilot-setup-steps.yml
+#
+# This workflow configures the environment for GitHub Copilot coding agent.
+# It installs dependencies needed by your Rails app AND by MCP servers
+# that use stdio/local transport (heroku, AWS, honeybadger).
+#
+# Validate changes by pushing to your default branch or running manually
+# from the Actions tab.
+
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps`
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    environment: copilot
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # ------------------------------------------------------------------
+      # Ruby / Rails dependencies
+      # ------------------------------------------------------------------
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true  # runs `bundle install` and caches gems
+
+      # ------------------------------------------------------------------
+      # Node.js — required for npx-based MCP servers (heroku, honeybadger)
+      # ------------------------------------------------------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # ------------------------------------------------------------------
+      # Python / uv — required for uvx-based MCP servers (AWS API)
+      # ------------------------------------------------------------------
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      # ------------------------------------------------------------------
+      # Verify MCP server tooling is available
+      # ------------------------------------------------------------------
+      - name: Verify toolchain
+        run: |
+          echo "=== Ruby ==="
+          ruby --version
+          bundle --version
+
+          echo "=== Node.js ==="
+          node --version
+          npx --version
+
+          echo "=== uv ==="
+          uv --version
+          uvx --version

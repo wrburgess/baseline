@@ -1,0 +1,6 @@
+@use "bootstrap/scss/bootstrap";
+@use "bootstrap-icons/font/bootstrap-icons";
+
+$bootstrap-icons-font-src: url("bootstrap-icons.woff2") format("woff2"), url("fonts/bootstrap-icons.woff") format("woff") !default;
+
+// Your public-specific styles here

@@ -1,0 +1,52 @@
+<%= simple_form_for([:admin, instance], local: true) do |f| %>
+  <div class="row">
+    <div class="col-12 col-lg-6">
+      <% unless instance.new_record? %>
+        <%= f.input :id, readonly: true, wrapper: :floating_label_form %>
+      <% end %>
+      <%= f.input :notification_topic_id,
+          as: :tom_select,
+          collection: NotificationTopic.options_for_select,
+          label: 'Topic',
+          prompt: 'Select a topic...',
+          autocomplete: 'off',
+          wrapper: :tom_select_label_inset %>
+      <%= f.input :user_id,
+          as: :tom_select,
+          collection: User.options_for_select,
+          label: 'User',
+          prompt: 'Select a user...',
+          autocomplete: 'off',
+          wrapper: :tom_select_label_inset %>
+      <%= f.input :distribution_method,
+          as: :tom_select,
+          collection: NotificationSubscription.distribution_methods_for_select,
+          label: 'Distribution Method',
+          prompt: 'Select a method...',
+          autocomplete: 'off',
+          wrapper: :tom_select_label_inset %>
+      <%= f.input :distribution_frequency,
+          as: :tom_select,
+          collection: NotificationSubscription.distribution_frequencies_for_select,
+          label: 'Distribution Frequency',
+          prompt: 'Select a frequency...',
+          autocomplete: 'off',
+          wrapper: :tom_select_label_inset %>
+      <%= f.input :summarized_daily_hour,
+          as: :tom_select,
+          collection: (0..23).map { |h| ["#{h}:00", h] },
+          label: 'Daily Summary Hour',
+          prompt: 'Select hour (for daily summaries)...',
+          autocomplete: 'off',
+          wrapper: :tom_select_label_inset,
+          hint: "Only used when frequency is 'Summarized Daily'" %>
+      <%= f.input :active, as: :boolean, wrapper: :custom_boolean_switch %>
+    </div>
+  </div>
+  <div class="row">
+    <div class="form-group">
+      <%= render Admin::ActionButton::Component.new(operation: :cancel_to_show, instance: instance, classes_append: "me-3", public: true) %>
+      <%= render Admin::FormButton::Component.new(operation: :submit) %>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,11 @@
+name: Update Gems
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # 06:00 CST (UTC-6)
+  workflow_dispatch:
+
+jobs:
+  update:
+    uses: mpimedia/mpi-application-workflows/.github/workflows/update-gems.yml@f00663fa9e97a7dafa18b276a6e483094116b98e # pin to known-good SHA
+    secrets: inherit

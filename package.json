@@ -1,0 +1,22 @@
+{
+  "dependencies": {
+    "@hotwired/stimulus": "3.2.2",
+    "@hotwired/turbo-rails": "8.0.23",
+    "@popperjs/core": "2.11.8",
+    "bootstrap": "5.3.8",
+    "bootstrap-icons": "1.13.1",
+    "esbuild": "0.28.0",
+    "sass": "1.99.0",
+    "tom-select": "2.6.0"
+  },
+  "name": "optimus",
+  "repository": "git@github.com:mpimedia/optimus.git",
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "build:css": "sass ./app/assets/stylesheets/admin.scss:./app/assets/builds/admin.css ./app/assets/stylesheets/public.scss:./app/assets/builds/public.css --no-source-map --load-path=node_modules --style=compressed",
+    "watch": "node esbuild.config.js --watch",
+    "watch:css": "sass --watch ./app/assets/stylesheets/admin.scss:./app/assets/builds/admin.css ./app/assets/stylesheets/public.scss:./app/assets/builds/public.css --no-source-map --load-path=node_modules"
+  },
+  "version": "1.0.0",
+  "packageManager": "yarn@4.13.0"
+}

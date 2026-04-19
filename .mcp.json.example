@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "cloudflare": {
+      "type": "http",
+      "url": "https://mcp.cloudflare.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CLOUDFLARE_API_TOKEN}"
+      }
+    },
+    "honeybadger": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@iflow-mcp/honeybadger-mcp"],
+      "env": {
+        "HONEYBADGER_API_KEY": "${HONEYBADGER_API_KEY}",
+        "HONEYBADGER_PROJECT_SFA": "34770",
+        "HONEYBADGER_PROJECT_AVAILS": "72164",
+        "HONEYBADGER_PROJECT_GARDEN": "129788",
+        "HONEYBADGER_PROJECT_HARVEST": "130411"
+      },
+      "tools": [
+        "get_honeybadger_fault", "get_honeybadger_notices",
+        "list_honeybadger_faults", "analyze_honeybadger_issue"
+      ]
+    }
+  }
+}

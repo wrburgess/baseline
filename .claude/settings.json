@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh run:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh workflow:*)",
+      "Bash(gh workflow view:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh issue:*)"
+    ],
+    "deny": [
+      "Edit(path:spec/fixtures/**)",
+      "Edit(path:spec/controllers/**)",
+      "Write(path:spec/fixtures/**)",
+      "Write(path:spec/controllers/**)",
+      "Edit(path:config/master.key)",
+      "Write(path:config/master.key)",
+      "Edit(path:config/credentials.yml.enc)",
+      "Write(path:config/credentials.yml.enc)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/enforce-branch-creation.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "sentry@claude-plugins-official": true,
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "imessage@claude-plugins-official": true
+  }
+}
