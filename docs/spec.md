@@ -70,6 +70,12 @@ It is **not** a lineup optimizer, a prediction model, a roster-management tool, 
 | 41 | Admin form conventions | Per AGENTS.md / `.claude/rules/backend.md`: `simple_form_for([:admin, instance])`, `tom_select` for selects (`wrapper: :tom_select_label_inset`), `floating_label_form` for text, `custom_boolean_switch` for booleans, `datepicker` for dates, two-column `row > col-12 col-lg-6` layout |
 | 42 | Test-intent-per-change | Before any code is written or modified, the agent determines whether a test must be written (new coverage) or adjusted (existing coverage). Changes without an explicit test-intent determination are not acceptable. Applies from v0 onward, without exception |
 | 43 | Pre-commit gates | `bundle exec rubocop -a && bundle exec rspec && bin/brakeman --no-pager -q && bin/bundler-audit check` — all four must pass before every commit, no exceptions |
+| 44 | Admin-mounted engines | All six inherited from Optimus, gated by `system_manager?`: **Blazer** (ad-hoc SQL), **GoodJob** (job dashboard), **MaintenanceTasks** (human-triggered long-running ops), **PgHero** (Postgres insights), **Lookbook** (ViewComponent previews, dev/staging only), **RailsDb** (DB explorer, dev/staging only) |
+| 45 | Import execution pattern | **Hybrid.** Captain-facing per-upload imports (screenshot → preview → commit) run as **GoodJob jobs** (`ParseImportJob`, `CommitImportJob`) for interactivity. Admin-facing bulk operations (e.g., quarterly grade re-import across 150-200 players) run as **`Maintenance::Task`s** at `/admin/maintenance_tasks` for observability + throttling + per-row error tracking. Both paths call a single shared `ClaudeVisionService` |
+| 46 | Search render path | Global search autocomplete returns a **Turbo Frame wrapping ViewComponents** (no ERB partials). Stimulus controller on the input debounces + GETs to a search controller; response renders `Baseline::Ui::SearchResultsComponent` composing `PlayerResultComponent` + `TeamResultComponent` children inside a `<turbo-frame id="search_results">`. No JSON endpoint, no JWT plumbing, no client-side templating |
+| 47 | Custom SystemOperations | Baseline extends Optimus's `SystemOperations` module with six custom operations: `merge` (player merge), `disambiguate` (resolve low-confidence player match), `commit` (transition import → committed), `reject` (transition import → failed), `enter_match_night` (manual match entry fallback), `link_fixture` (manual fixture attachment). Each becomes a granular SystemPermission row; policies reference them explicitly (e.g., `PlayerPolicy#merge?`). `policy_setup` shared context is extended to include all six |
+| 48 | `system_manager` role scope | Seeded exclusively to `wrburgess@gmail.com` at install time. No one else receives it until explicitly promoted via console. Principle of least privilege — raw SQL / job retries / DB browser access is reserved for the project owner; plain admin role (with merge, disambiguation, lineage work) can be granted to trusted helpers without widening operator access |
+| 49 | Per-phase permission sync | Every phase that adds a new controller (or adds a custom `SystemOperations` entry) includes an explicit acceptance-criterion checkbox: "Ran `Maintenance::EnsureModelSystemPermissionsTask` (or seeded manually); `SystemPermission` rows exist for every controller × operation combination; verified admin access to new controllers under `wrburgess@gmail.com`." Applies to Phases 1, 4, 5, 6, 7, 8, 9, 10, 11 |
 
 ---
 
@@ -435,9 +441,37 @@ Admin uses its own asset pipeline (`admin.scss`, `app/javascript/admin/`, `admin
 
 - **Devise** for authentication.
 - **Pundit** for authorization.
-- **Built-in `system_permissions` + `system_roles`** for role definitions (`admin`, `captain`, future `player_viewer`).
+- **Full Optimus permission tree** inherited as-is — `User → SystemGroupUser → SystemGroup → SystemGroupSystemRole → SystemRole → SystemRoleSystemPermission → SystemPermission(resource, operation)`. Six join/lookup tables; `access_authorized?` with per-request memoization. No modifications from Optimus's implementation.
+- **Roles in Baseline:**
+  - `system_manager` — full operator access + mounted engines (Blazer, GoodJob, MaintenanceTasks, PgHero, Lookbook, RailsDb). Seeded to `wrburgess@gmail.com` only.
+  - `admin` — data hygiene operations (player merge, disambiguation, lineage, grade management, import review).
+  - `captain` — upload imports for teams they captain; view all scouting surfaces.
+  - `player_viewer` (future, schema-ready, not built in v0) — self-service player-profile visibility.
 - **No unauthenticated surfaces** in v0. Every route requires login; Pundit enforces role checks.
 - `Player.user_id` nullable FK so the `player_viewer` role can be introduced without migration pain.
+
+### Extended `SystemOperations` (app/modules/system_operations.rb)
+
+Baseline extends Optimus's operation set with six custom operations for domain-specific admin/captain actions:
+
+| Operation | Scope | Purpose |
+|---|---|---|
+| `merge` | admin | Transactionally merge two Player records (re-points match_participants, grades, player_aliases, team_players, head_to_head_notes; creates alias from source name) |
+| `disambiguate` | admin | Resolve a low-confidence player match flagged during import preview |
+| `commit` | captain or admin | Transition an `Import` from `needs_review` → `committed` (writes real records in a transaction) |
+| `reject` | captain or admin | Transition an `Import` to `failed` with a reason note |
+| `enter_match_night` | captain or admin | Manual match-night entry (Phase 10 fallback), bypasses the screenshot-import path but reuses the same commit service |
+| `link_fixture` | admin | Manually attach a played `TeamMatch` to a `ScheduledFixture` when auto-match at commit time didn't resolve the link |
+
+Standard Optimus operations (`index`, `show`, `new`, `create`, `edit`, `update`, `destroy`, `archive`, `unarchive`, `copy`, `import`, `collection_export_xlsx`, `member_export_xlsx`) continue to apply unchanged.
+
+### `policy_setup` shared context extension
+
+`spec/support/shared_contexts/policy_setup.rb` is extended to seed the six custom operations alongside the 12 Optimus defaults, so every policy spec has full operation coverage available.
+
+### Permission seeding on controller addition
+
+Every phase that ships a new admin controller must run `Maintenance::EnsureModelSystemPermissionsTask` (or seed manually) to create `SystemPermission` rows for the controller × operation combinations, and assign them to the appropriate `SystemRole` (typically starts with the `system_manager` role, then gets granted to narrower roles as access rules are defined). Verification: logging in as `wrburgess@gmail.com`, every new admin controller's `index` responds 200.
 
 ### Multi-captain Pundit patterns
 
