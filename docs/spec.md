@@ -1,0 +1,482 @@
+# Baseline — Spec
+
+**Codename:** Baseline
+**Public URL:** `baseline.kc.tennis`
+**Repo:** `wrburgess/baseline`
+**Project:** [Baseline Setup](https://github.com/users/wrburgess/projects/2)
+
+This spec is the output of an 18-question grill session (April 2026) that re-derived requirements from scratch. The predecessor work lives at `wrburgess/baseline-archive` and in the Courtview repo — treated here as historical reference, not dependency.
+
+---
+
+## 1. What This Is
+
+Baseline is a tennis scouting and player-profile app for Kansas City–area USTA league captains. It answers three questions:
+
+1. **Scouting matrix (job-to-be-done A):** "When our roster plays theirs, who has played whom, what happened, and when?"
+2. **Player profile (job B):** "What do we know about this player — ratings over time, matches, partners, opponents?"
+3. **Team profile & team-vs-team (job C):** "How has this team — and its lineage across sessions — done, and how have we done against them?"
+
+It is **not** a lineup optimizer, a prediction model, a roster-management tool, or a public tennis reference site. Captains use it privately; all pages are behind authentication.
+
+"Public" in this project means **authenticated non-admin** (future: a "player viewer" role). It does **not** mean scrapable or indexable on the open web. No unauthenticated surfaces exist.
+
+---
+
+## 2. Core Decisions (locked during the grill)
+
+| # | Area | Resolution |
+|---|------|------------|
+| 1 | Primary user | Captain doing scouting + profile + team lookups; future "player viewer" role via `system_permissions` |
+| 2 | Public = authenticated non-admin | Not scrapable/indexable; no unauthenticated surfaces in v0 |
+| 3 | Page set | Dashboard, scouting matrix, player profile, pairwise H2H, team profile, team-vs-team, global search, match imports |
+| 4 | Scouting primitive | Full roster × roster matrix (captain stacking invalidates "line-1 = strongest"); two matrices (singles top, doubles below), stacked |
+| 5 | Format awareness | Scouting matrix renders per league format; doubles-only leagues hide the singles matrix |
+| 6 | Tri-level | One `Team` per tri-level team; UI splits matrix into three court-sections by rating |
+| 7 | Captain dashboard | `/` shows active-team cards with format, next match, recent match, "scout" + "enter match" CTAs |
+| 8 | Match entry primitive | A "match night" (`TeamMatch`) is the unit; rating snapshots auto-populated from current `grades` at commit |
+| 9 | Import pipeline | Claude Sonnet vision on TennisLink screenshots; unified `imports` table with `kind` enum (`team_roster` \| `match_night` \| `player_ratings`) |
+| 10 | Team lineage | Explicit `team_lineages` table; default team-vs-team view is lineage-vs-lineage |
+| 11 | Post-season modeling | `TeamMatch.level` enum (`regular_season` \| `local_playoff` \| `district` \| `section` \| `national` \| `tournament`); no `Competition`/`Stage`/`TeamStageEntry` entities |
+| 12 | Court position | `matches.court_number` integer, populated from import |
+| 13 | WO/RET/DEF | Count in H2H tallies; badge in match list; "completed only" toggle available |
+| 14 | Rating freshness | Info-icon + tooltip showing last observation date (no color coding) |
+| 15 | Venue | Freeform string on `matches`; no `Venue` model in v0 |
+| 16 | Design methodology | Wireframes first (no style), then tokens + ViewComponents; hybrid Claude Design canvas + Claude Code implementation |
+| 17 | Dark mode | Ships with visual layer (Phase 3); Bootstrap's `data-bs-theme` native support |
+| 18 | Icons | Bootstrap Icons (ships with Bootstrap 5) |
+| 19 | Hosting | Kamal to DigitalOcean VPS from Phase 0; Postgres on same droplet at v0 scale |
+| 20 | Domain | `baseline.kc.tennis` (subdomain of existing `kc.tennis`) |
+| 21 | Courtview dependency | None. Schema derived from requirements. Courtview is historical reference only |
+| 22 | Multi-captain contribution | First-class v0 requirement — Pundit scopes match uploads to teams the captain captains |
+| 23 | Grade re-ingestion | Quarterly-recurring operational task (Tennis Record + WTN primary sources); `kind: player_ratings` in the imports pipeline |
+| 24 | Flights | First-class entity with `parent_flight_id` self-reference for sub-flights; teams belong to leaf flight |
+| 25 | Roster setup | Hybrid: manual league creation in admin + TennisLink team-page screenshot import for rosters |
+| 26 | Subs | No sub concept. If a player is on the roster, they're on the roster. Rosters are ground truth |
+| 27 | Duplicate matches | Rejected on import. `TeamMatch` unique on `(played_on, team_a_id, team_b_id)`; no merge flow in v0 |
+| 28 | Auth | Devise + Pundit + built-in `system_permissions` + `system_roles` |
+| 29 | UI stack | Bootstrap 5 (Sass-themed) + ViewComponent + Propshaft + esbuild; tables-only, zero charts |
+| 30 | Score storage | Hybrid: `format` + `rules_format` + `outcome` + `winning_side` enums + structured `sets` JSONB + cached `score_display` string |
+| 31 | Player dedup | `players` + `player_aliases` + pg_trgm fuzzy resolution + admin merge flow + needs-disambiguation queue |
+| 32 | Analysis fidelity | Tables only. Blazer handles ad-hoc visual needs |
+
+---
+
+## 3. Schema
+
+### Core entities (fresh — not ported from Courtview)
+
+**`organizations`** — USTA parent organization. Minimal.
+**`sections`** — USTA sections (e.g., Missouri Valley). `belongs_to :organization`.
+**`districts`** — USTA districts (e.g., Heart of America). `belongs_to :section`.
+**`seasons`** — Spring, Summer, Fall. Simple name lookup.
+**`years`** — Calendar year lookup.
+
+### Competitive structure
+
+**`leagues`**
+```
+name                   string                  # "HoA 18+ Men 3.5 Spring 2026"
+district_id            bigint FK
+season_id              bigint FK
+year_id                bigint FK
+age_level              string (enum)           # 18_plus | 40_plus | 55_plus | 65_plus | 70_plus
+gender_type            string (enum)           # men | women | mixed
+rating_range           string                  # "3.5" | "7.0_combo" | "tri_level_3.0_3.5_4.0"
+singles_lines          integer                 # e.g., 2 (for 2S+3D); 0 for doubles-only
+doubles_lines          integer                 # e.g., 3
+game_format_type       string (enum)           # level | tri_level | mixed_doubles | combo_doubles | singles_only
+ustaid                 string nullable         # USTA system id
+trid                   string nullable         # TennisRecord league id
+```
+
+**`flights`**
+```
+league_id              bigint FK
+name                   string                  # "Flight A", "Flight A.1"
+parent_flight_id       bigint FK self nullable # for sub-flights
+```
+
+**`teams`**
+```
+flight_id              bigint FK               # leaf flight
+team_lineage_id        bigint FK nullable
+name                   string                  # "Corinthian Men's 3.5"
+abbreviation           string nullable
+```
+
+**`team_lineages`**
+```
+name                   string                  # canonical name, e.g. "Corinthian Men's 3.5 Adult"
+organization_id        bigint FK nullable      # the club if applicable
+notes                  text
+```
+
+**`team_players`**
+```
+team_id                bigint FK
+player_id              bigint FK
+role                   string (enum)           # player | co_captain | captain
+```
+
+### Player identity & ratings
+
+**`players`**
+```
+first_name             string
+last_name              string
+preferred_name         string nullable         # "Bob" for "Robert"
+gender                 string (enum)           # required
+birth_year             integer nullable
+ustaid                 string nullable
+trid                   string nullable
+utrid                  string nullable
+wtnid                  string nullable
+user_id                bigint FK nullable      # future player-viewer role
+```
+
+**`player_aliases`**
+```
+player_id              bigint FK
+alias_string           string
+source                 string (enum)           # captain_entered | parser_observed | imported
+confidence             float
+```
+
+**`grades`**
+```
+player_id              bigint FK
+rating_system          string (enum)           # usta_ntrp | tennis_record | wtn_dynamic | wtn_singles | utr_dynamic | utr_singles | utr_doubles
+value                  decimal                 # 3.5, 4.0, 7.32, etc.
+rating_type            string (enum) nullable  # S | C | A | M (USTA only)
+status                 string (enum) nullable  # active | appealed | dq | manual (USTA)
+observed_on            date
+rationale              string (enum) nullable  # self_rated | year_end_computer | early_start_bump | mid_year_bump | three_strike_dq | appeal_granted | appeal_denied | manual | unknown_legacy
+previous_grade_id      bigint FK self nullable
+source                 string (enum)           # manual | parser_tennisrecord | parser_wtn | parser_tennislink | imported
+```
+
+### Matches & participation
+
+**`team_matches`** (one per "match night")
+```
+league_id              bigint FK
+home_team_id           bigint FK
+away_team_id           bigint FK
+played_on              date
+level                  string (enum)           # regular_season | local_playoff | district | section | national | tournament
+event_name             string nullable         # e.g. "HoA Districts 2026", "Plaza Open"
+venue                  string nullable
+home_score             integer                 # lines won (e.g., 3)
+away_score             integer                 # lines won (e.g., 2)
+notes                  text
+
+unique index on (played_on, home_team_id, away_team_id)  -- no duplicates
+```
+
+**`matches`** (one per line within a team match)
+```
+team_match_id          bigint FK nullable      # null for tournament matches outside league play
+court_number           integer nullable        # line number 1..N
+played_on              date
+format                 string (enum)           # singles | doubles
+rules_format           string (enum)           # best_of_3_standard | best_of_3_match_tb | fast4 | pro_set_8 | pro_set_10 | match_tb_10 | match_tb_7 | custom
+outcome                string (enum)           # completed | retired | defaulted | walkover | timed
+winning_side           string (enum) nullable  # home | away | null
+sets                   jsonb                   # [{home, away, tb_home?, tb_away?}, ...]
+score_display          string                  # e.g., "6-4 3-6 10-8"
+notes                  text
+```
+
+**`match_participants`**
+```
+match_id               bigint FK
+player_id              bigint FK
+side                   string (enum)           # home | away
+position               integer                 # 1 | 2 (null for singles)
+partner_id             bigint FK nullable      # denormalized: other participant on same side
+won                    boolean                 # derived at commit
+
+# rating snapshots at time of match
+usta_rating_at_match         decimal nullable
+usta_rating_type_at_match    string nullable
+tr_rating_at_match           decimal nullable
+utr_dynamic_at_match         decimal nullable
+utr_singles_at_match         decimal nullable
+utr_doubles_at_match         decimal nullable
+wtn_dynamic_at_match         decimal nullable
+wtn_singles_at_match         decimal nullable
+```
+
+### H2H caching
+
+**`head_to_head_caches`** (denormalized for scouting speed)
+```
+player_a_id            bigint FK   # always the lower ID
+player_b_id            bigint FK
+format                 string (enum)   # all | singles | doubles
+wins_a                 integer
+wins_b                 integer
+last_played_on         date nullable
+total_matches          integer
+computed_at            datetime
+
+unique index on (player_a_id, player_b_id, format)
+```
+
+**`head_to_head_notes`**
+```
+player_a_id            bigint FK   # enforced a_id < b_id
+player_b_id            bigint FK
+body                   text            # markdown
+author_id              bigint FK       # users.id
+```
+
+### Imports pipeline
+
+**`imports`** (unified for all three kinds)
+```
+user_id                bigint FK
+screenshot             ActiveStorage attachment
+kind                   string (enum)           # team_roster | match_night | player_ratings
+source_type            string (enum)           # tennislink_team_page | tennislink_match_results | tennisrecord_player_page | wtn_player_page
+status                 string (enum)           # uploaded | parsing | needs_review | committed | failed
+parsed_data            jsonb
+context                jsonb                   # e.g. { league_id, team_id, player_id } for scoping
+committed_at           datetime nullable
+error_message          text nullable
+```
+
+### Auth (from the Optimus template; carried as-is)
+
+- `users` — Devise
+- `system_roles` / `system_permissions` / `system_role_permissions` — existing role model
+- `roles` of note: `admin`, `captain`, (future) `player_viewer`
+
+### Indexes of note
+
+- pg_trgm on `players.first_name`, `players.last_name`, `players.preferred_name`, `player_aliases.alias_string`
+- `team_matches (played_on, home_team_id, away_team_id)` UNIQUE
+- `head_to_head_caches (player_a_id, player_b_id, format)` UNIQUE
+- `match_participants (player_id)` for fast player-profile queries
+- `match_participants (match_id)` for fast match rendering
+- `flights (league_id, parent_flight_id)` for flight-tree traversal
+
+---
+
+## 4. Subsystems
+
+### H2H cache refresh (GoodJob)
+
+On every `Match` commit → enqueue `HeadToHeadCacheRefreshJob(player_a_id, player_b_id)` for every `(a, b)` pair among the match's participants. Job recomputes three cache rows (all / singles / doubles) via aggregation queries on `match_participants`. Idempotent. Unique constraint on `(a, b, format)` with canonical `a < b` ordering.
+
+### Player resolution (used by all import kinds + admin)
+
+When a name string needs to resolve to a Player:
+1. Exact match on `ustaid` (if provided) → auto-link.
+2. Exact match on `first_name + last_name` (case-insensitive) → single hit auto-proposes; multiple hits require disambiguation.
+3. Exact match on `player_aliases.alias_string` → same.
+4. pg_trgm fuzzy match (score ≥ 0.75) → top 5 candidates.
+5. No match → captain creates new player manually from the preview screen.
+
+Auto-creation of Players without captain confirmation is disallowed.
+
+### Merge flow (admin-only)
+
+`Admin::Players::MergeController` — select two players, transactionally re-points `match_participants`, `grades`, `player_aliases`, `team_players`, `head_to_head_notes` from `source` to `target`, creates an alias for the merged player's name, deletes the source record.
+
+### Import pipeline (unified)
+
+All three kinds share the same flow:
+
+1. **Upload** (`/imports/new`) — captain picks `kind` + uploads screenshot + fills minimal context (e.g., which team for roster; which team for match night).
+2. **Parse** — `ParseImportJob` calls Claude Sonnet 4.6 vision API with a kind-specific prompt and JSON schema; writes `parsed_data` + sets `status: needs_review`.
+3. **Preview** (`/imports/:id`) — captain sees parsed data + player-resolution candidates per slot + inline editing.
+4. **Commit** — validates no duplicates (TeamMatch uniqueness), writes the real records in a transaction, triggers downstream (e.g., H2H cache refresh for `match_night`).
+
+Per-kind schemas:
+- `team_roster`: extracts team name, league context (if discoverable), captain name, roster [{first_name, last_name, current_ntrp, position}]
+- `match_night`: extracts team names, date, level, lines [{court_number, format, home_players, away_players, sets, outcome, winning_side, venue}]
+- `player_ratings`: extracts external ratings (TR / WTN) observed at the page's current state; appends as new `grades` rows
+
+### Global search (pg_trgm)
+
+Top-nav global search across `players`, `teams`, `leagues`. Autocomplete shows Player + current NTRP + last-played-on OR Team + league + captain. Arrow-key navigation, Enter selects.
+
+---
+
+## 5. Pages (v0)
+
+### Dashboard (`/` after login)
+
+- **10-second answer:** "Here are the teams you're captaining right now, what's next for each."
+- Global search bar (persistent in all layouts).
+- Active teams section — one card per team where `current_user` is `captain` or `co_captain` and the league is current.
+- Past teams — collapsed by default.
+
+Card content: team name · league name · format (e.g., "2S+3D") · roster size · next match (if scheduled) · recent match (with "Enter match" CTA if not yet imported) · "Scout any team in this league" picker.
+
+**Not on this page:** league standings, ranking tables, pending-roster-approval, notifications feed.
+
+### Scouting matrix (`/scout/:our_team_id/vs/:their_team_id`)
+
+- **10-second answer:** "Who on our side has played who on theirs, and how did it go?"
+- Header: our team → vs → their team, with a "widen to league / narrow to flight" toggle.
+- **Two stacked matrix sections** — singles on top, doubles below. Hide the singles matrix entirely for doubles-only leagues. For tri-level, split each matrix into three court-sections by rating.
+- Cell content: W-L from my-player's POV · freshness dot (solid/half/hollow) · empty state = dash. Hover/long-press shows tooltip with last-played date. Click → pairwise H2H page. Row/column header click → player profile.
+
+**Not on this page:** match scores (drill into H2H), player ratings (drill into profile), notes, lineup suggestions.
+
+### Player profile (`/players/:id`)
+
+- **10-second answer:** "Current NTRP, recent form, what we know about them at a glance."
+- Header: name, preferred name, current NTRP (with freshness info-icon), external rating badges (TR, WTN, UTR) with freshness.
+- Recent form strip — last 5 matches, one row per match, W/L indicator.
+- Ratings history (table) — chronological, each rating system in columns.
+- **Match history, split into singles and doubles sections** (not a tab, not merged). Each is Ransack-filterable, Pagy-paginated.
+- Frequent opponents table (singles + doubles splits).
+- Frequent partners table (doubles only).
+
+**Not on this page:** charts, sparklines, shared-partner graphs, predictions, player-to-player comparison tooling (that's H2H's job).
+
+### Pairwise H2H (`/head_to_heads/:a_id/:b_id`)
+
+- **10-second answer:** "Record vs them, last played, rating deltas then→now."
+- Header: both names, ratings side by side with freshness.
+- Aggregate bar: "A leads 4–2" with format toggle (all / singles / doubles) AND "completed only" toggle.
+- Context strip: first meeting, most recent, rating delta.
+- **Two match lists, split singles and doubles** (same design philosophy as profile).
+- Per-pair captain-private notes (markdown). Symmetric URL (`/a/b` and `/b/a` both resolve; canonical ordering uses lower ID for cache/notes).
+
+### Team profile (`/teams/:id`)
+
+- **10-second answer:** "Who's on this team, what lineage is it part of, and what's their record."
+- Header: team name · league · format · captain · lineage name (linked).
+- Lineage history — chronological list of teams in this lineage across sessions, newest first.
+- Roster — sortable table with player name, current NTRP (freshness icon), match count on this team, W-L on this team.
+- Team-match history — list of TeamMatches this team played, with score and link to scorecard.
+
+**Not on this page:** individual match lines (those live on the scorecard drill-down or the opponent's team page), standings, playoff bracket rendering.
+
+### Team-vs-team (`/team_vs_team/:a_lineage_id/:b_lineage_id`)
+
+- **10-second answer:** "Our lineage vs their lineage, all time, with season filter."
+- **Default mode: lineage-vs-lineage** (aggregate across all seasons both lineages have met).
+- Season filter defaulted to "all seasons" (Mode 2); user can narrow to any specific season (Mode 1) from a dropdown.
+- Aggregate record: "our lineage leads 6-4 across 3 sessions."
+- Per-session breakdown: each TeamMatch rendered as a scorecard (court-by-court line results) with link into each line's Match record.
+- Linked to the scouting matrix for the current session (if both lineages have active teams in the same league).
+
+### Match imports
+
+- `/imports/new` — upload form: pick `kind`, upload screenshot, fill minimal context.
+- `/imports/:id` — preview/correct UI: parsed data + player-resolution per slot + inline edit + commit/reject buttons.
+- `/imports` — history list: your uploads + status (admin sees all).
+
+### Admin surfaces
+
+Full-design, not default scaffolds:
+- `Admin::Players` — CRUD + merge + "needs disambiguation" queue
+- `Admin::Grades` — timeline-style view, inline edit, bulk-import for quarterly refreshes
+- `Admin::PlayerAliases` — view/add/remove
+- `Admin::HeadToHeadNotes` — index (notes are edited on the H2H page)
+- `Admin::Leagues` — CRUD including format + line counts
+- `Admin::Flights` — nested under League; supports sub-flight creation
+- `Admin::Teams` — lineage assignment with fuzzy-match suggestions; read-mostly since rosters come from imports
+- `Admin::TeamLineages` — CRUD
+- `Admin::TeamPlayers` — role assignment; read-mostly
+- `Admin::Imports` — see all imports across captains; retry failed
+
+---
+
+## 6. Auth & Permissions
+
+- **Devise** for authentication.
+- **Pundit** for authorization.
+- **Built-in `system_permissions` + `system_roles`** for role definitions (`admin`, `captain`, future `player_viewer`).
+- **No unauthenticated surfaces** in v0. Every route requires login; Pundit enforces role checks.
+- `Player.user_id` nullable FK so the `player_viewer` role can be introduced without migration pain.
+
+### Multi-captain Pundit patterns
+
+- `ImportPolicy#create?` — user is `admin` OR has `team_players.role ∈ {captain, co_captain}` on a team involved in the import's context.
+- `ImportPolicy#index?` — admin sees all; captain sees their own uploads.
+- `HeadToHeadNotePolicy#update?` — admin OR any captain (notes are captain-collaborative for now).
+- `PlayerPolicy#*`, `GradePolicy#*`, `TeamLineagePolicy#*` — admin-only.
+- `MatchPolicy#read?` — any authenticated user.
+
+---
+
+## 7. Build Sequence (v0 — 11 phases + Phase 0)
+
+Each phase has a dedicated issue in the [`Baseline Setup`](https://github.com/users/wrburgess/projects/2) project with problem, proposed solution, locked decisions, acceptance criteria, and open questions. Reference phase issues from commits and PRs.
+
+**Phase 0** — Import Optimus template + scrub MPI/Optimus references + deploy "Hello World" to `baseline.kc.tennis` via Kamal. CI green before any app code exists.
+
+**Phase 1** — Schema foundation. Fresh Baseline schema derived from §3. Models, validations, factories. Seed a minimum of one league + a few players to exercise the schema. No Courtview migration (decommissioned).
+
+**Phase 2** — Wireframes, all pages, no style. Hybrid Claude Design + Claude Code workflow. Per-page: 10-second-answer above the fold, scan pattern, anti-requirements, mobile vs desktop layout. Output: `docs/designs/*.md` IA specs + draft Rails views (unstyled HTML + Bootstrap grid only).
+
+**Phase 3** — Design tokens + ViewComponent primitives. Semantic color (light + dark), type scale, spacing, radius, shadow. `Baseline::Ui::*` ViewComponents. Apply tokens to Phase 2 draft views. Dark mode shipped.
+
+**Phase 4** — Admin CRUD, styled. Leagues, Flights, Players, Grades, PlayerAliases, Team Lineages, Teams, TeamPlayers, Merge flow, Disambiguation queue. Pundit policies per resource.
+
+**Phase 5** — Imports pipeline foundation + roster imports. Active Storage, Claude vision service, `imports` table, preview/commit scaffolding, `kind: team_roster` workflow. First real data lands in prod via imports.
+
+**Phase 6** — Captain dashboard + player profile. `/` with active-team cards; `/players/:id` with full profile. Dogfood milestone: log in, see my teams, open any player.
+
+**Phase 7** — Scouting matrix. `/scout/:ours/vs/:theirs` with dual singles/doubles matrices, format-aware, tri-level court split, toggle to widen from flight to league.
+
+**Phase 8** — Match imports + H2H cache refresh. `kind: match_night` workflow. `HeadToHeadCacheRefreshJob`. Matches flow in via TennisLink screenshots.
+
+**Phase 9** — Pairwise H2H + team profile + team-vs-team. `/head_to_heads/:a/:b`, `/teams/:id`, `/team_vs_team/:a/:b` (lineage-vs-lineage default, season filter for Mode 1). Team-match scorecard rendering.
+
+**Phase 10** — Manual match entry fallback. `/match_nights/new` reusing the import preview form but initialized blank.
+
+**Phase 11** — Polish. Empty states (zero matches, never played, archived), Pagy everywhere, search perf, Pundit coverage tests, critical-path system specs, performance budget (matrix renders < 300ms at production data volume).
+
+### Milestones
+
+- **End of Phase 6** = "v0 ready to dogfood myself" (dashboard + profile work against real data).
+- **End of Phase 11** = "v0 ready to invite another captain."
+
+---
+
+## 8. Testing Posture
+
+RSpec + Capybara + FactoryBot + shoulda-matchers + timecop + VCR + WebMock.
+
+- **Model specs** — validations, key scopes, player resolution algorithm, H2H cache refresh logic. Must-have.
+- **Policy specs** — one per Pundit policy. Cheap and critical for a role-locked app.
+- **Service specs** — import pipeline parsers (stub the Claude vision response; test the pipeline around it).
+- **System specs** — one "happy path" per public page. Thin coverage; Capybara is slow, don't over-invest.
+- **Request specs** — skip for v0 unless a specific endpoint has logic outside a policy.
+
+No coverage threshold. Fix bugs by adding a spec, not by targeting a number.
+
+---
+
+## 9. Maintenance Concerns
+
+- **Quarterly grade re-imports.** Tennis Record + WTN primary sources. USTA/NTRP changes are rare (appeals, DQs, new entries). Operational task, not one-shot. `kind: player_ratings` workflow handles it.
+- **Multi-captain data quality.** Upload dedup (TeamMatch uniqueness) prevents duplicates. Admin reviews flagged imports. No merge flow in v0 — rejected uploads are rejected.
+- **Kamal / VPS ops.** DigitalOcean managed backups. Minimal burden.
+- **Claude vision API dependency.** Manual match entry fallback (Phase 10) keeps the tool functional if the API is down.
+- **Team lineage setup.** Manual admin step per new team; ~1-2 hours per session. Acceptable given volume (~15-20 leagues per session in KC).
+
+---
+
+## 10. Deferred / Open Questions
+
+Intentionally not resolved. Revisit post-v0 or as real-use data dictates.
+
+- **Bracket rendering for tournaments.** v0 treats tournaments as loose Matches with `event_name + level: tournament`. First-class bracket modeling is v2+ if ever.
+- **Line-position strength signals.** Captain stacking invalidates the naive "line 1 = strongest" signal. A better analysis (e.g., "at line 1, this player's winning percentage is X") is post-v0.
+- **Shared-partner analysis.** "Alice has partnered with Bob; Bob has played Carol; what does Alice-vs-Carol look like transitively?" — deferred.
+- **Notification triggers.** None in v0. Candidates post-v0: notify captain when a merge proposal needs review; notify when an import has errors.
+- **Roster-import automation.** Phase 5 covers single-team uploads. Bulk "whole league in one pass" import is post-v0.
+- **Player-viewer role UI.** Schema ready (`player.user_id`), policies stubbed. Actual page restrictions and player-self-service flows are post-v0.
+
+---
+
+*This spec is the output of an 18-question grill session using Claude Opus 4.7. Changes post-lockin need a new grill, not a silent edit.*
