@@ -8,7 +8,7 @@ development:
   <<: *default
   username: postgres
   password: postgres
-  database: <%= ENV.fetch("POSTGRES_DB_DEVELOPMENT", "optimus_development") %>
+  database: <%= ENV.fetch("POSTGRES_DB_DEVELOPMENT", "baseline_development") %>
   pool: 5
   timeout: 5000
 
@@ -16,7 +16,7 @@ test:
   <<: *default
   username: postgres
   password: postgres
-  database: <%= ENV.fetch("POSTGRES_DB_TEST", "optimus_test") %>
+  database: <%= ENV.fetch("POSTGRES_DB_TEST", "baseline_test") %>
 
 staging:
   primary:
