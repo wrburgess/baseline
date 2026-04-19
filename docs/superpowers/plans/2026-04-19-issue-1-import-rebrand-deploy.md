@@ -57,11 +57,10 @@
 
   **Recommended:** (C), with default values that work for the HC's personal 1Password. Action: HC picks one before Phase 2 Task 2F runs.
 
-- [ ] **P2.D4 — Honeybadger in Baseline?** The template integrates Honeybadger via `bin/setup-credentials`, `.mcp.json.example`, `.gitignore`, and `bin/setup-mcp`. Options:
-  - **(A)** Keep Honeybadger integration. Needs a Baseline-specific Honeybadger project.
-  - **(B)** Remove Honeybadger entirely from Baseline. Simpler. Error monitoring can be added later if needed.
-
-  **Recommended:** (B). Action: HC picks one before Phase 2 Task 2F runs.
+- [x] **P2.D4 — Error tracking: swap Honeybadger → Sentry. SETTLED via #14.**
+  - Remove all Honeybadger integration from the template (`bin/setup-credentials` lines 79–133, `.mcp.json.example` Honeybadger block, `.gitignore` `/.honeybadger-cli.yaml` entry).
+  - Add Sentry via Task 2O (new): `sentry-ruby` + `sentry-rails` gems, `config/initializers/sentry.rb`, DSN stored in per-environment credentials under `sentry.dsn`.
+  - DSN value supplied by HC from #14 completion; populated into production credentials during Phase 3 Task 3B.
 
 - [ ] **P2.D5 — Commit granularity.** This plan uses ~15 small commits across Phase 2 for review traceability. The issue says "Commit 2 — Rebrand Optimus → Baseline; strip MPI references" (single commit). If the single-commit rule is binding, execute with small commits and squash at phase end before merging. **Recommended: squash at end, preserve PR review comments via reviewable history during CR.**
 
@@ -88,6 +87,21 @@
   - **(B)** Add staging/dev gating removal for Lookbook + RailsDb to meet the literal AC. **Not recommended — they aren't production-safe.**
 
   Action: HC confirms interpretation (A) before Phase 3 verification.
+
+- [x] **P3.D6 — Production database: DigitalOcean Managed Postgres. SETTLED via #14.**
+  - Managed Postgres cluster provisioned in #14; `DATABASE_URL` captured in 1Password.
+  - Passed to the app container as an env var via `.kamal/secrets` (not via Rails credentials — it's an infra value, not a secret the app owns).
+  - `config/database.yml` production block already reads `ENV["DATABASE_URL"]` — no code change needed.
+  - Droplet IP added to the cluster's Trusted Sources allowlist.
+
+- [x] **P3.D7 — Transactional email: Postmark. SETTLED via #14.**
+  - Postmark server provisioned in #14; API token + verified sender domain captured in 1Password.
+  - Stored in per-environment credentials under `postmark.api_token` and `postmark.sender_email`.
+  - `config/environments/production.rb` configured with Postmark SMTP delivery method in Phase 3 Task 3C.
+
+- [x] **P3.D8 — Error tracking wiring: Sentry DSN into production credentials. SETTLED via #14.**
+  - DSN captured from #14; populated into production credentials during Phase 3 Task 3B (same pass that creates the credentials file).
+  - Staging DSN (if different) deferred — not needed for hello-world.
 
 ---
 
@@ -623,7 +637,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 - Modify: `bin/setup-mcp` (3 refs + references to deleted doc)
 - Modify: `bin/setup-copilot-mcp` (2 refs)
 - Modify: `.mcp.json.example` (4 Honeybadger project IDs + sibling-repo refs)
-- Modify: `.gitignore` (`.honeybadger-cli.yaml` only relevant if P2.D4 = A)
+- Modify: `.gitignore` (remove `.honeybadger-cli.yaml` line per P2.D4 settled)
 - Modify: `context7.json` (1 ref)
 
 **Depends on:** P2.D3 (1Password), P2.D4 (Honeybadger).
@@ -643,23 +657,26 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
   Also update line 13 (docblock comment) to match the new behavior.
 
-- [ ] **Step 2: Handle Honeybadger section per P2.D4.**
+- [ ] **Step 2: Remove all Honeybadger integration (per P2.D4 — Sentry replaces it in Task 2D2).**
 
-  **If P2.D4 = (B) Remove Honeybadger (recommended):**
   - Delete lines 79–133 from `bin/setup-credentials` (the whole Honeybadger CLI configuration block).
-  - Remove `/.honeybadger-cli.yaml` from `.gitignore` (line 59–60 of `.gitignore`).
-
-  **If P2.D4 = (A) Keep Honeybadger:** rename `"Optimus Production Honeybadger"` on line 86 to `"Baseline Production Honeybadger"`; keep remainder as-is.
+  - Remove `/.honeybadger-cli.yaml` from `.gitignore` (line 59–60).
+  - Any `.honeybadger.yml` / `config/honeybadger.yml` file: delete if present.
+  - Grep check after:
+    ```bash
+    rg -i 'honeybadger' .
+    ```
+    Expected: zero matches (or note any left in vendored binaries — none expected).
 
 - [ ] **Step 3: Scrub `bin/setup-mcp`.**
 
-  - Line 14 comment: `# MCP Server Profile (Optimized — see docs/architecture/mcp-integration-audit.md):` — if P2.D2 deletes that doc, delete this line and its context (lines 14–17 referencing MCP profile rationale). Replace with: `# MCP Server Profile: Cloudflare (Code Mode)` (and Honeybadger only if P2.D4 = A).
+  - Line 14 comment block: `# MCP Server Profile (Optimized — see docs/architecture/mcp-integration-audit.md):` and lines 14–17 referencing MCP profile rationale → replace with `# MCP Server Profile: Cloudflare (Code Mode)`.
   - Line 31: same `OP_ACCOUNT` change as Step 1.
-  - Lines 54–55: reference to `docs/architecture/mcp-integration-audit.md` — delete or rewrite to point at a Baseline doc.
-  - Lines 60–62: dry-run credential list — remove Honeybadger line if P2.D4 = B.
-  - Lines 80–81: the `op read` calls — remove Honeybadger line if P2.D4 = B.
-  - Line 87–88: substitution lines — remove Honeybadger substitution if P2.D4 = B.
-  - Comment lines 16–17 ("error tracking across MPI projects") — delete or rewrite.
+  - Lines 54–55: reference to `docs/architecture/mcp-integration-audit.md` — delete.
+  - Lines 60–62: dry-run credential list — remove Honeybadger line.
+  - Lines 80–81: the `op read` calls — remove Honeybadger line.
+  - Line 87–88: substitution lines — remove Honeybadger substitution.
+  - Comment lines 16–17 ("error tracking across MPI projects") — delete.
 
 - [ ] **Step 4: Scrub `bin/setup-copilot-mcp`.**
 
@@ -667,7 +684,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 5: Scrub `.mcp.json.example`.**
 
-  **If P2.D4 = (B) Remove Honeybadger:** replace file contents with:
+  Replace file contents with:
   ```json
   {
     "mcpServers": {
@@ -682,8 +699,6 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
   }
   ```
 
-  **If P2.D4 = (A) Keep Honeybadger:** delete `HONEYBADGER_PROJECT_SFA`, `HONEYBADGER_PROJECT_AVAILS`, `HONEYBADGER_PROJECT_GARDEN`, `HONEYBADGER_PROJECT_HARVEST` lines. Add a single `HONEYBADGER_PROJECT_BASELINE` entry with a placeholder project ID that the HC will populate.
-
 - [ ] **Step 6: Scrub `context7.json`.**
 
   Open the file, locate the single `optimus`/`mpi` reference, replace with Baseline equivalent.
@@ -694,7 +709,78 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
   ```bash
   git add bin/setup-credentials bin/setup-mcp bin/setup-copilot-mcp \
           .mcp.json.example .gitignore context7.json
-  git commit -m "Rebrand setup scripts and MCP config (per P2.D3, P2.D4)
+  git commit -m "Rebrand setup scripts and MCP config; remove Honeybadger
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
+  ```
+
+---
+
+### Task 2D2: Sentry integration (replaces removed Honeybadger)
+
+**Files:**
+- Modify: `Gemfile`
+- Modify: `Gemfile.lock`
+- Create: `config/initializers/sentry.rb`
+
+- [ ] **Step 1: Add sentry gems to Gemfile.**
+
+  Edit `/Users/wrburgess/Projects/aaa/baseline/Gemfile`. Add at the top level (not in a `group :production do` block, so it's available everywhere — the initializer's `enabled_environments` controls when events actually fire):
+  ```ruby
+  gem "sentry-ruby", "~> 5.24"
+  gem "sentry-rails", "~> 5.24"
+  ```
+
+- [ ] **Step 2: Install gems.**
+
+  Run:
+  ```bash
+  bundle install
+  ```
+  Expected: `sentry-ruby` and `sentry-rails` installed, `Gemfile.lock` updated.
+
+- [ ] **Step 3: Create `config/initializers/sentry.rb`.**
+
+  Write:
+  ```ruby
+  Sentry.init do |config|
+    config.dsn = Rails.application.credentials.dig(:sentry, :dsn)
+    config.breadcrumbs_logger = [:active_support_logger, :http_logger]
+    config.traces_sample_rate = 0.0
+    config.profiles_sample_rate = 0.0
+    config.enabled_environments = %w[production staging]
+    config.environment = Rails.env
+    config.release = ENV["KAMAL_VERSION"]
+  end
+  ```
+
+  Notes:
+  - DSN comes from per-env credentials (populated for production in Phase 3 Task 3B). If nil, Sentry SDK no-ops — safe to ship before DSN exists.
+  - `enabled_environments` excludes `development` and `test`, so local/test runs never ship events.
+  - `KAMAL_VERSION` is set by Kamal to the deployed git SHA.
+
+- [ ] **Step 4: Boot check.**
+
+  Run:
+  ```bash
+  bin/rails runner 'puts "boot OK; Sentry defined: #{defined?(Sentry)}"'
+  ```
+  Expected: `boot OK; Sentry defined: constant`. Anything else means the initializer errored.
+
+- [ ] **Step 5: Run specs.**
+
+  Run:
+  ```bash
+  bundle exec rspec
+  ```
+  Expected: all green (Sentry no-ops in test env per `enabled_environments`).
+
+- [ ] **Step 6: Commit.**
+
+  Run:
+  ```bash
+  git add Gemfile Gemfile.lock config/initializers/sentry.rb
+  git commit -m "Add Sentry error tracking; DSN loaded from per-env credentials
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
   ```
@@ -1283,11 +1369,13 @@ Deploys a Baseline container to the DigitalOcean droplet at `baseline.kc.tennis`
 
 ---
 
-### Task 3B: Generate production credentials
+### Task 3B: Generate production credentials (Sentry DSN + Postmark token)
 
 **Files:**
-- Create: `config/credentials/production.yml.enc` (encrypted empty hash)
+- Create: `config/credentials/production.yml.enc` (encrypted hash with Sentry + Postmark values)
 - Create: `config/credentials/production.key` (gitignored)
+
+**Depends on:** #14 complete — HC must have Sentry DSN and Postmark API token + verified sender email recorded in 1Password before this task runs.
 
 - [ ] **Step 1: Remove any stale production credentials from Phase 1 exclusion miss.**
 
@@ -1297,33 +1385,67 @@ Deploys a Baseline container to the DigitalOcean droplet at `baseline.kc.tennis`
   ```
   Expected: `OK: no stale production credentials`. If files exist, STOP — they are the template's secrets; delete immediately and re-verify Phase 1 exclusions.
 
-- [ ] **Step 2: Generate fresh production credentials.**
+- [ ] **Step 2: Retrieve values from 1Password.**
+
+  Pull the values interactively so they're in your terminal history (you'll paste them in Step 3 and the shell history is acceptable for this short window — clear after):
+  ```bash
+  op read "op://Baseline/Baseline Sentry DSN/credential" --account=<your_account>
+  op read "op://Baseline/Baseline Postmark Server Token/credential" --account=<your_account>
+  ```
+  Record the `sender_email` too (the verified Postmark sender like `noreply@baseline.kc.tennis`).
+
+- [ ] **Step 3: Generate and populate production credentials.**
+
+  Set your preferred editor and run:
+  ```bash
+  EDITOR="${EDITOR:-vi}" bin/rails credentials:edit --environment production
+  ```
+
+  In the editor, replace the contents with:
+  ```yaml
+  sentry:
+    dsn: <PASTE_SENTRY_DSN_FROM_STEP_2>
+
+  postmark:
+    api_token: <PASTE_POSTMARK_SERVER_TOKEN_FROM_STEP_2>
+    sender_email: noreply@baseline.kc.tennis  # or your verified Postmark sender address
+  ```
+
+  Save and exit. Rails encrypts the file with the newly-generated `config/credentials/production.key`.
+
+- [ ] **Step 4: Verify credentials decrypt correctly.**
 
   Run:
   ```bash
-  EDITOR=true bin/rails credentials:edit --environment production
+  bin/rails credentials:show --environment production
   ```
-  Expected: creates `config/credentials/production.key` + `config/credentials/production.yml.enc` with an empty/default hash, then closes (since EDITOR=true just touches and saves).
+  Expected: shows the decrypted YAML with `sentry.dsn` and `postmark.api_token` + `sender_email`.
 
-- [ ] **Step 3: Verify the key is gitignored.**
+- [ ] **Step 5: Verify the key is gitignored, encrypted file is tracked.**
 
   Run:
   ```bash
-  git status --porcelain | grep 'production.key' || echo "OK: production.key is gitignored"
+  git status --porcelain config/credentials/
   ```
-  Expected: `OK: production.key is gitignored` (the `.gitignore` entry `/config/credentials/*.key` covers it).
+  Expected:
+  ```
+  ?? config/credentials/production.yml.enc    # new, untracked
+  ```
+  (production.key must NOT appear — `.gitignore` entry `/config/credentials/*.key` covers it.)
 
-- [ ] **Step 4: Stage and commit only the .yml.enc.**
+  If `production.key` DOES appear, STOP — inspect `.gitignore` and fix before proceeding.
+
+- [ ] **Step 6: Stage and commit only the encrypted file.**
 
   Run:
   ```bash
   git add config/credentials/production.yml.enc
-  git commit -m "Add empty production credentials for Baseline
+  git commit -m "Add production credentials with Sentry DSN + Postmark token
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
   ```
 
-- [ ] **Step 5: Save the key value securely.**
+- [ ] **Step 7: Save the key value to 1Password.**
 
   Read the key:
   ```bash
@@ -1331,7 +1453,14 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
   ```
   Expected: a 32-char hex string.
 
-  **HC action:** store this key in 1Password (or wherever secrets live) under a name like "Baseline Production Rails Master Key". This value will be injected as `RAILS_MASTER_KEY` in `.kamal/secrets`.
+  **HC action:** store this value in 1Password as "Baseline Production Rails Master Key". This value will be injected as `RAILS_MASTER_KEY` via `.kamal/secrets` so the running container can decrypt `production.yml.enc`.
+
+- [ ] **Step 8: Clear terminal history of the raw DSN/token.**
+
+  Optional but recommended:
+  ```bash
+  history -c && history -w  # zsh: this clears current session's history
+  ```
 
 ---
 
@@ -1380,32 +1509,86 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
   Line 65 should already read `- "baseline_storage:/rails/storage"` (done in Task 2B).
 
-- [ ] **Step 6: Add production.rb SSL config.**
+- [ ] **Step 6: Add production.rb SSL + SMTP config.**
 
   Edit `config/environments/production.rb`:
-  - Confirm `config.assume_ssl = true` and `config.force_ssl = true` are set (Rails 8.1 templates usually default these on). If commented, uncomment.
 
-- [ ] **Step 7: Create `.kamal/secrets`.**
+  a) **SSL:** Confirm `config.assume_ssl = true` and `config.force_ssl = true` are set (Rails 8.1 templates default these on). Uncomment if needed.
 
-  Create file `.kamal/secrets` with contents:
-  ```bash
-  KAMAL_REGISTRY_USERNAME=$(doctl registry token | jq -r .access_token)  # or your registry username
-  KAMAL_REGISTRY_PASSWORD=$(doctl registry token | jq -r .access_token)  # DO uses the same token for both
-  RAILS_MASTER_KEY=$(cat config/credentials/production.key)
+  b) **Postmark SMTP:** Add (or replace existing mailer config):
+  ```ruby
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.default_url_options = { host: "baseline.kc.tennis", protocol: "https" }
+  config.action_mailer.smtp_settings = {
+    address:              "smtp.postmarkapp.com",
+    port:                 587,
+    user_name:            Rails.application.credentials.dig(:postmark, :api_token),
+    password:             Rails.application.credentials.dig(:postmark, :api_token),
+    authentication:       :plain,
+    enable_starttls_auto: true
+  }
+  ActionMailer::Base.default from: Rails.application.credentials.dig(:postmark, :sender_email)
   ```
-  (Adjust per P3.D3: if ghcr.io, use PAT; if Docker Hub, use username/password.)
+
+  Postmark uses the Server API Token as both SMTP username and password — not a typo.
+
+- [ ] **Step 7: Add DATABASE_URL to deploy.yml env.secret.**
+
+  Edit `config/deploy.yml` `env.secret:` list so it reads:
+  ```yaml
+  env:
+    secret:
+      - RAILS_MASTER_KEY
+      - DATABASE_URL
+  ```
+  This makes Kamal inject `DATABASE_URL` from `.kamal/secrets` into the running container as an env var, which `config/database.yml` production block reads.
+
+- [ ] **Step 8: Create `.kamal/secrets`.**
+
+  Pull values from 1Password into environment variables in your shell, then create the secrets file:
+  ```bash
+  # Put these in your current shell from 1Password (or export in ~/.zshrc)
+  export DB_URL=$(op read "op://Baseline/Baseline Production DATABASE_URL/credential" --account=<your_account>)
+  ```
+
+  Create `.kamal/secrets` with:
+  ```bash
+  KAMAL_REGISTRY_USERNAME=$(doctl registry token | jq -r .access_token)
+  KAMAL_REGISTRY_PASSWORD=$(doctl registry token | jq -r .access_token)
+  RAILS_MASTER_KEY=$(cat config/credentials/production.key)
+  DATABASE_URL=$DB_URL
+  ```
+
+  Notes:
+  - DO registry: the token is used for both username and password (Kamal 2 pattern).
+  - Adjust for ghcr.io or Docker Hub per P3.D3.
+  - Do NOT hardcode the actual `DATABASE_URL` string in this file — pull from 1Password at deploy time via env var expansion.
 
   Run:
   ```bash
   chmod 600 .kamal/secrets
   ```
 
-- [ ] **Step 8: Commit deploy.yml.**
+- [ ] **Step 9: Verify `.kamal/secrets` is gitignored.**
+
+  Run:
+  ```bash
+  git check-ignore .kamal/secrets && echo "OK: gitignored" || echo "NOT IGNORED"
+  ```
+  Expected: `OK: gitignored`. If `NOT IGNORED`, append `/.kamal/secrets` to `.gitignore`, stage, commit.
+
+- [ ] **Step 10: Commit deploy + production config.**
 
   Run:
   ```bash
   git add config/deploy.yml config/environments/production.rb .gitignore
-  git commit -m "Configure Kamal deploy for DigitalOcean + Let's Encrypt on baseline.kc.tennis
+  git commit -m "Configure Kamal deploy for DO + Postmark SMTP + DATABASE_URL injection
+
+- deploy.yml: real droplet IP, DO registry, Let's Encrypt via proxy.ssl
+- production.rb: Postmark SMTP via credentials.postmark.api_token
+- env.secret includes DATABASE_URL for the managed Postgres connection
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
   ```
@@ -1488,13 +1671,17 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 3: Reset the HC user's password via Devise.**
 
-  Since `db/seeds.rb` sets a random password, trigger Devise's reset flow:
+  Since `db/seeds.rb` sets a random password, trigger Devise's reset flow (Postmark SMTP is configured in Task 3C Step 6):
   - Visit `https://baseline.kc.tennis/users/password/new` in a browser.
   - Enter `wrburgess@gmail.com`.
-  - Check email for the reset link (ensure production SMTP/Postmark is configured; if not, log into the container and pull the URL from `log/production.log`).
-  - Set a password.
+  - Postmark delivers the reset email to your inbox (check Postmark's Activity panel if it doesn't arrive within ~1 min — the sandbox may still be restricting recipients).
+  - Click the link and set a password.
 
-  **Note:** If SMTP is not set up yet, this is a Phase 3 sub-issue — flag to HC. For hello-world, it's acceptable to temporarily set a password via `kamal app exec 'bin/rails runner ...'` and rotate later.
+  **Fallback:** If the Postmark sender domain is still in sandbox / hasn't finished DNS verification, pull the reset URL directly from container logs:
+  ```bash
+  bin/kamal app logs | grep -A2 'password_resets'
+  ```
+  Copy the link and paste into your browser.
 
 - [ ] **Step 4: Log in and verify admin engines.**
 
@@ -1611,10 +1798,13 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>" || echo "n
 
 ## Post-merge followups (file as separate issues)
 
-- **Issue #2 (future):** Full Kamal deploy pipeline — staging environment, deploy notifications, rollback runbooks.
-- **Issue #3 (future):** Production SMTP configuration (Postmark or similar) so Devise password reset works end-to-end.
-- **Issue #4 (future):** CI secrets setup for GitHub Actions (if workflows require any).
-- **Issue #5 (future):** Re-evaluate whether retained but lightly-edited docs (e.g., `docs/architecture/agent-workflow.md`) should be rewritten for Baseline-specific clarity.
+- **Future — Full Kamal deploy pipeline:** staging environment, deploy notifications, rollback runbooks.
+- **Future — CI secrets setup** for GitHub Actions (if workflows require any).
+- **Future — Sentry source maps** for JavaScript error decoding (requires esbuild source map upload at build time).
+- **Future — Staging environment** with separate Postmark sender domain + separate Sentry project/environment.
+- **Future — Re-evaluate lightly-edited docs** (e.g., `docs/architecture/agent-workflow.md`) for Baseline-specific clarity.
+
+(Postmark SMTP and Sentry error tracking are in-scope for this issue via #14 — no longer followups.)
 
 ---
 
