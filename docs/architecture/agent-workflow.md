@@ -1,10 +1,10 @@
 # Agent Workflow Architecture
 
-This document describes how AI agents (Claude Code, Copilot) interact in the MPI development workflow.
+This document describes how AI agents (Claude Code, Copilot) interact in the Baseline development workflow.
 
 ## Agent Roles
 
-For the full role registry with knowledge domains, construct mapping, and cross-repo applicability, see [`agent-roles.md`](agent-roles.md).
+Roles are defined below as contexts loaded into the same agent, not separate agents.
 
 ### Agent Tools
 
@@ -235,7 +235,7 @@ Agents coordinate through:
 |---------|---------|
 | `/orch NNN` | Design multi-agent orchestration (when `/cplan` recommends parallel) |
 | `/explore TOPIC` | Deep-dive into a codebase area |
-| `/compare REPO` | Diff standards against another MPI repo |
+| `/compare REPO` | Diff standards against another repo |
 | `/dep-review NNN` | Review Dependabot/dependency update PR |
 | `/db-health` | Run database health diagnostics |
 | `/memory-review` | Audit auto-memory and recommend maintenance |

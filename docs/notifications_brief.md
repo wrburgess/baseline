@@ -2,7 +2,7 @@
 
 ## Business + product context
 
-### Optimus
+### Baseline
 
   * Purpose: Rails application template to kick off any new projects
   * Users: Internal Staff

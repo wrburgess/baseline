@@ -1,6 +1,6 @@
 # Memory Management Standards
 
-Standards for managing Claude Code auto-memory (`~/.claude/projects/*/memory/`) across Baseline projects. Based on research findings F5.1–F5.5 from `docs/research/ai-best-practices.md`.
+Standards for managing Claude Code auto-memory (`~/.claude/projects/*/memory/`) across Baseline projects.
 
 ## Auto-Memory vs Repo-Tracked Docs
 
@@ -155,4 +155,3 @@ These standards are informed by:
 - **F5.5** — Active curation over accumulation (MemoryBench: 10% degradation from indiscriminate storage)
 - **S5.5** — 10,000 token budget, 200-line MEMORY.md limit (Claude Code docs, SFEIR)
 
-See `docs/research/ai-best-practices.md` Area 5 for full source details.

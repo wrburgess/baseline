@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This guide is for AI agents implementing new notifications in the Optimus codebase. Follow these steps to add notifications to controller actions or model callbacks.
+This guide is for AI agents implementing new notifications in the Baseline codebase. Follow these steps to add notifications to controller actions or model callbacks.
 
 ---
 

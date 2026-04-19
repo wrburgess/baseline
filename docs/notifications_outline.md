@@ -2,7 +2,7 @@
 
 You are an experienced full stack Ruby on Rails developer
 
-We need to create a notification system for our application, a Rails 8.1.2 app named Optimus
+We need to create a notification system for our application, a Rails 8.1.2 app named Baseline
 
 We want to model it after the AWS SMS system, but it won’t be quite as involved as that application (or collection of services), but we like the Topic > Subscriber model/approach. That doesn't mean we have to use that pattern.
 

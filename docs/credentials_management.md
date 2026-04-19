@@ -2,7 +2,7 @@
 
 ## Per-Environment Credentials
 
-Optimus uses per-environment encrypted credentials — each environment has its own encrypted file and its own key:
+Baseline uses per-environment encrypted credentials — each environment has its own encrypted file and its own key:
 
 | Environment | Encrypted File | Key File |
 |-------------|---------------|----------|
@@ -35,11 +35,13 @@ Requires the [1Password CLI](https://developer.1password.com/docs/cli/) with CLI
 
 Ask a team member for the key, or retrieve it from the "Application Development" vault in 1Password:
 
+The 1Password account is configured via the `BASELINE_OP_ACCOUNT` env var (see `bin/setup-credentials`). Keys are stored under the "Application Development" vault in the configured account.
+
 | 1Password Item | Field |
 |---------------|-------|
-| Optimus Development Key | `credential` |
-| Optimus Staging Key | `credential` |
-| Optimus Production Key | `credential` |
+| Baseline Development Key | `credential` |
+| Baseline Staging Key | `credential` |
+| Baseline Production Key | `credential` |
 
 Place the key value in the corresponding file (e.g., `config/credentials/development.key`).
 
