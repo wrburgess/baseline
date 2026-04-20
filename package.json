@@ -18,5 +18,5 @@
     "watch:css": "sass --watch ./app/assets/stylesheets/admin.scss:./app/assets/builds/admin.css ./app/assets/stylesheets/public.scss:./app/assets/builds/public.css --no-source-map --load-path=node_modules"
   },
   "version": "1.0.0",
-  "packageManager": "yarn@4.13.0"
+  "packageManager": "yarn@4.14.1"
 }
