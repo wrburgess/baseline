@@ -62,6 +62,22 @@ It is **not** a lineup optimizer, a prediction model, a roster-management tool, 
 | 33 | Scheduled fixtures | First-class `scheduled_fixtures` table. Pre-season fixture list imported via `kind: league_schedule`. `team_matches.fixture_id` (nullable FK) links a played match to its fixture when imported. Dashboard "next match" reads from `scheduled_fixtures` |
 | 34 | Search shell vs search implementation | Persistent nav shell from Phase 3; functional pg_trgm autocomplete in Phase 6; polish in Phase 11. |
 | 35 | H2H notes visibility | Captain-collaborative — shared among all authenticated captains. Not per-user-private |
+| 36 | Optimus conventions authoritative | Retained `.claude/rules/*.md` and `docs/standards/*.md` are the authoritative source for developer discipline (models, concerns, controllers, routes, forms, testing, migrations, security, self-review). `docs/spec.md` covers product + schema only. On conflict, the rules files win |
+| 37 | Concerns on every model | Every data model includes `Archivable`, `Loggable`, and `Notifiable` (where applicable) per Optimus pattern |
+| 38 | Route concerns on admin resources | Every admin `resources :foo` line includes `concerns: [:archivable, :collection_exportable, :member_exportable, :copyable]` unless justified otherwise during `/cplan` |
+| 39 | Enum storage pattern | All enums managed via Optimus pattern — module in `app/modules/` + concern in `app/models/concerns/`. Reference: `app/modules/notification_distribution_methods.rb`. Inline string enums on a model are not acceptable |
+| 40 | Asset pipeline separation | Two separate pipelines — admin (`admin.scss`, `app/javascript/admin/`, `admin.html.erb` layout) and public (`application.html.erb`). Separate Stimulus Application instances per AGENTS.md |
+| 41 | Admin form conventions | Per AGENTS.md / `.claude/rules/backend.md`: `simple_form_for([:admin, instance])`, `tom_select` for selects (`wrapper: :tom_select_label_inset`), `floating_label_form` for text, `custom_boolean_switch` for booleans, `datepicker` for dates, two-column `row > col-12 col-lg-6` layout |
+| 42 | Test-intent-per-change | Before any code is written or modified, the agent determines whether a test must be written (new coverage) or adjusted (existing coverage). Changes without an explicit test-intent determination are not acceptable. Applies from v0 onward, without exception |
+| 43 | Pre-commit gates | `bundle exec rubocop -a && bundle exec rspec && bin/brakeman --no-pager -q && bin/bundler-audit check` — all four must pass before every commit, no exceptions |
+| 44 | Admin-mounted engines | All six inherited from Optimus, gated by `system_manager?`: **Blazer** (ad-hoc SQL), **GoodJob** (job dashboard), **MaintenanceTasks** (human-triggered long-running ops), **PgHero** (Postgres insights), **Lookbook** (ViewComponent previews, dev/staging only), **RailsDb** (DB explorer, dev/staging only) |
+| 45 | Import execution pattern | **Hybrid.** Captain-facing per-upload imports (screenshot → preview → commit) run as **GoodJob jobs** (`ParseImportJob`, `CommitImportJob`) for interactivity. Admin-facing bulk operations (e.g., quarterly grade re-import across 150-200 players) run as **`Maintenance::Task`s** at `/admin/maintenance_tasks` for observability + throttling + per-row error tracking. Both paths call a single shared `ClaudeVisionService` |
+| 46 | Search render path | Global search autocomplete returns a **Turbo Frame wrapping ViewComponents** (no ERB partials). Stimulus controller on the input debounces + GETs to a search controller; response renders `Baseline::Ui::SearchResultsComponent` composing `PlayerResultComponent` + `TeamResultComponent` children inside a `<turbo-frame id="search_results">`. No JSON endpoint, no JWT plumbing, no client-side templating |
+| 47 | Custom SystemOperations | Baseline extends Optimus's `SystemOperations` module with six custom operations: `merge` (player merge), `disambiguate` (resolve low-confidence player match), `commit` (transition import → committed), `reject` (transition import → failed), `enter_match_night` (manual match entry fallback), `link_fixture` (manual fixture attachment). Each becomes a granular SystemPermission row; policies reference them explicitly (e.g., `PlayerPolicy#merge?`). `policy_setup` shared context is extended to include all six |
+| 48 | `system_manager` role scope | Seeded exclusively to `wrburgess@gmail.com` at install time. No one else receives it until explicitly promoted via console. Principle of least privilege — raw SQL / job retries / DB browser access is reserved for the project owner; plain admin role (with merge, disambiguation, lineage work) can be granted to trusted helpers without widening operator access |
+| 49 | Per-phase permission sync | Every phase that adds a new controller (or adds a custom `SystemOperations` entry) includes an explicit acceptance-criterion checkbox: "Ran `Maintenance::EnsureModelSystemPermissionsTask` (or seeded manually); `SystemPermission` rows exist for every controller × operation combination; verified admin access to new controllers under `wrburgess@gmail.com`." Applies to Phases 1, 4, 5, 6, 7, 8, 9, 10, 11 |
+| 50 | Admin navigation pattern | Retain Optimus's top-nav with grouped dropdowns (`Admin::NavBar::Component` + `NavItem::Component` + `NavDropdownItem::Component`). Environment color-coded. **Left-side nav explicitly rejected** — data tables are horizontally dense (scouting matrix, match histories, ratings timelines); 240px of persistent sidebar steals real estate that matters. Left-nav remains a 1-component-swap migration path if pressure later warrants it |
+| 51 | Admin polish adopted from gem ecosystem | Four enhancements land in Phase 4 on top of Optimus's existing components: **(a) Scope tabs** (`Baseline::Ui::ScopeTabs` — Active / Archived / All pills above every admin index, using Optimus's `archivable` concern scopes); **(b) Filter chips** (`Baseline::Ui::FilterChips` — removable Ransack-filter indicator row above tables, complements the offcanvas `FilterCard::Component` drawer); **(c) Dashboard metrics** (extend existing `dashboard_card` components on `/admin` with live counts: disambiguation queue size, failed imports, pending match-nights, unassigned lineages); **(d) Breadcrumbs** (`Baseline::Ui::Breadcrumbs` — Bootstrap `.breadcrumb` for deep admin paths). Skipped: inline cell editing, Cmd+K command palette, left-side nav rewrite |
 
 ---
 
@@ -123,6 +139,11 @@ role                   string (enum)           # player | co_captain | captain
 ```
 
 ### Player identity & ratings
+
+**Conventions applied to every model below:**
+- Includes `Archivable` (soft delete via `archive!` / `unarchive!`), `Loggable` (audit trail into `data_logs`), and `Notifiable` (event hooks) where applicable
+- Enumerated columns are backed by Optimus's enum pattern: module in `app/modules/` + concern in `app/models/concerns/` (reference: `app/modules/notification_distribution_methods.rb`). Inline string enums are not acceptable.
+- Every admin resource route is declared with `concerns: [:archivable, :collection_exportable, :member_exportable, :copyable]` unless a specific concern is explicitly excluded during `/cplan`.
 
 **`players`**
 ```
@@ -395,7 +416,15 @@ Card content: team name · league name · format (e.g., "2S+3D") · roster size 
 
 ### Admin surfaces
 
-Full-design, not default scaffolds:
+Full-design, not default scaffolds. All admin forms use Optimus conventions (from AGENTS.md + `.claude/rules/backend.md`):
+- `simple_form_for([:admin, instance])` with `tom_select` for selects (`wrapper: :tom_select_label_inset`), `floating_label_form` for text fields, `custom_boolean_switch` for booleans, `datepicker` for date inputs
+- Two-column layout: `row > col-12 col-lg-6`
+- Admin controllers inherit from `AdminController` (Devise + Pundit)
+- Reference: `app/views/admin/system_groups/_form.html.erb` in the Optimus template
+
+Admin uses its own asset pipeline (`admin.scss`, `app/javascript/admin/`, `admin.html.erb` layout) — separate from the public pipeline per AGENTS.md.
+
+
 - `Admin::Players` — CRUD + merge + "needs disambiguation" queue
 - `Admin::Grades` — timeline-style view, inline edit, bulk-import for quarterly refreshes
 - `Admin::PlayerAliases` — view/add/remove
@@ -414,9 +443,37 @@ Full-design, not default scaffolds:
 
 - **Devise** for authentication.
 - **Pundit** for authorization.
-- **Built-in `system_permissions` + `system_roles`** for role definitions (`admin`, `captain`, future `player_viewer`).
+- **Full Optimus permission tree** inherited as-is — `User → SystemGroupUser → SystemGroup → SystemGroupSystemRole → SystemRole → SystemRoleSystemPermission → SystemPermission(resource, operation)`. Six join/lookup tables; `access_authorized?` with per-request memoization. No modifications from Optimus's implementation.
+- **Roles in Baseline:**
+  - `system_manager` — full operator access + mounted engines (Blazer, GoodJob, MaintenanceTasks, PgHero, Lookbook, RailsDb). Seeded to `wrburgess@gmail.com` only.
+  - `admin` — data hygiene operations (player merge, disambiguation, lineage, grade management, import review).
+  - `captain` — upload imports for teams they captain; view all scouting surfaces.
+  - `player_viewer` (future, schema-ready, not built in v0) — self-service player-profile visibility.
 - **No unauthenticated surfaces** in v0. Every route requires login; Pundit enforces role checks.
 - `Player.user_id` nullable FK so the `player_viewer` role can be introduced without migration pain.
+
+### Extended `SystemOperations` (app/modules/system_operations.rb)
+
+Baseline extends Optimus's operation set with six custom operations for domain-specific admin/captain actions:
+
+| Operation | Scope | Purpose |
+|---|---|---|
+| `merge` | admin | Transactionally merge two Player records (re-points match_participants, grades, player_aliases, team_players, head_to_head_notes; creates alias from source name) |
+| `disambiguate` | admin | Resolve a low-confidence player match flagged during import preview |
+| `commit` | captain or admin | Transition an `Import` from `needs_review` → `committed` (writes real records in a transaction) |
+| `reject` | captain or admin | Transition an `Import` to `failed` with a reason note |
+| `enter_match_night` | captain or admin | Manual match-night entry (Phase 10 fallback), bypasses the screenshot-import path but reuses the same commit service |
+| `link_fixture` | admin | Manually attach a played `TeamMatch` to a `ScheduledFixture` when auto-match at commit time didn't resolve the link |
+
+Standard Optimus operations (`index`, `show`, `new`, `create`, `edit`, `update`, `destroy`, `archive`, `unarchive`, `copy`, `import`, `collection_export_xlsx`, `member_export_xlsx`) continue to apply unchanged.
+
+### `policy_setup` shared context extension
+
+`spec/support/shared_contexts/policy_setup.rb` is extended to seed the six custom operations alongside the 12 Optimus defaults, so every policy spec has full operation coverage available.
+
+### Permission seeding on controller addition
+
+Every phase that ships a new admin controller must run `Maintenance::EnsureModelSystemPermissionsTask` (or seed manually) to create `SystemPermission` rows for the controller × operation combinations, and assign them to the appropriate `SystemRole` (typically starts with the `system_manager` role, then gets granted to narrower roles as access rules are defined). Verification: logging in as `wrburgess@gmail.com`, every new admin controller's `index` responds 200.
 
 ### Multi-captain Pundit patterns
 
@@ -477,23 +534,50 @@ What is **preserved from Optimus** (renamed to Baseline where appropriate, but s
 
 ## 8. Testing Posture
 
-**Testing is a first-class concern from v0 onward.** Every code change — new file, edit, bug fix, refactor — must be accompanied by a determination: either a new spec is written to improve coverage, or existing specs are adjusted to reflect the change. This rule applies to all phases, not just Phase 11 polish.
+**Testing discipline is inherited wholesale from `.claude/rules/testing.md` and `docs/standards/testing.md` (retained from the Optimus template in Phase 0).** The "Definition of Done" in those rules applies to Baseline without modification. Framework: RSpec + FactoryBot + Capybara (Selenium for `js: true`) + shoulda-matchers + timecop + VCR + WebMock + Bullet + SimpleCov.
 
-Stack: RSpec + Capybara + FactoryBot + shoulda-matchers + timecop + VCR + WebMock.
+### Test-intent-per-change (Baseline-specific addition)
 
-- **Model specs** — validations, associations, scopes, concerns (Notification, Loggable, Archivable), enum modules, business logic (player resolution algorithm, H2H cache refresh logic, member/collection export methods). Every model has a spec.
-- **Request specs** — every controller action. Covers routing, authentication, Pundit authorization, response codes, and response payloads. This is the primary controller coverage layer — not skipped.
-- **Feature specs (Capybara)** — every user-facing interface (dashboard, scouting matrix, player profile, H2H, team profile, team-vs-team, imports flow, admin CRUD surfaces). Cover the golden path plus critical edge cases per page.
-- **Policy specs** — one per Pundit policy. Cheap and critical for a role-locked app.
-- **Service / job specs** — import pipeline parsers (stub the Claude vision response; test the pipeline around it), H2H cache refresh job, any background job.
+**Before any code is written or modified, the agent determines:**
+1. Does a new test need to be written to cover the change?
+2. Does an existing test need to be adjusted to reflect new behavior?
+3. Does this change remove behavior that currently has coverage (and therefore coverage should be removed too)?
 
-**Factories (FactoryBot):**
-- One factory per model, mirroring the Optimus pattern.
-- Efficient by default — minimal required attributes, `build` over `create` where possible, `build_stubbed` in unit specs where DB round-trips are unnecessary.
-- Use traits for variants (`:archived`, `:with_grades`, `:captain`, etc.) rather than duplicating factories.
-- Associations declared lazily to avoid cascade creation in unrelated specs.
+The agent states the test intent explicitly in `/cplan` output or in the PR description for smaller changes. Code changes that arrive without an explicit test-intent determination are rejected during self-review.
 
-No coverage threshold. Fix bugs by adding a spec, not by targeting a number. But **no code lands without its corresponding test decision** being made and recorded in the PR.
+This rule extends (does not replace) the Optimus "Definition of Done" — Optimus says "tests must be written to protect the change"; Baseline adds "tests must be *considered* before the change is written." Applies from v0 onward, without exception.
+
+### Definition of Done (from Optimus, mandatory)
+
+- Model specs cover all validations, associations, scopes, callbacks, public methods, enumerables
+- Request specs for every controller action, 3 auth contexts (authenticated + authorized, unauthenticated, authenticated + unauthorized) × full assertions (response content, DB side effects, flash, redirect, error cases)
+- Feature specs cover every controller action type (create / edit / show / index / archive) + every admin form input type (`tom_select`, text, textarea, boolean switch, datepicker)
+- Policy specs test both grant and deny for every action (index?, show?, new?, create?, edit?, update?, destroy?, archive?, unarchive?)
+- External HTTP via VCR; never live calls in tests
+- Shared examples applied: `it_behaves_like "archivable"`, `"loggable"`, etc., on models that include those concerns
+- SimpleCov coverage enforced in CI with branch coverage using a ratcheting baseline (starts at 66% per Optimus, long-term target 90%)
+- Bullet `raise = true` in test — specs fail on N+1 or unused eager loading
+
+### Pre-commit gates
+
+All four must pass before every commit, no exceptions:
+
+```
+bundle exec rubocop -a
+bundle exec rspec
+bin/brakeman --no-pager -q
+bin/bundler-audit check
+```
+
+### Anti-patterns (from `.claude/rules/testing.md`)
+
+- Never use fixtures — FactoryBot only
+- Never use controller specs — request specs only
+- Never test private methods directly — test through the public interface
+- Never use `sleep` — use `freeze_time` or `travel_to` for time-dependent tests
+- Never hard-code IDs or timestamps
+- Never skip edge cases because "they're unlikely"
+- Never say "needs manual testing" without proving the automated stack can't handle it
 
 ---
 
