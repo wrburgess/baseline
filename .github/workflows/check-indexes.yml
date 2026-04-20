@@ -1,7 +1,14 @@
 name: Check Indexes
 
 on:
-  workflow_call:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'db/migrate/**.rb'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'db/migrate/**.rb'
 
 jobs:
   check-indexes:

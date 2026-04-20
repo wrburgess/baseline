@@ -1,47 +1,13 @@
 name: CI Rails
 
 on:
-  workflow_call:
-    inputs:
-      elasticsearch:
-        description: 'Enable Elasticsearch service for tests'
-        required: false
-        default: false
-        type: boolean
-      libvips:
-        description: 'Install libvips for image processing'
-        required: false
-        default: false
-        type: boolean
-      security_scan:
-        description: 'Run security scans (Brakeman, bundler-audit, JS audit)'
-        required: false
-        default: true
-        type: boolean
-      lint:
-        description: 'Run RuboCop linting'
-        required: false
-        default: true
-        type: boolean
-      importmap:
-        description: 'Run importmap audit for projects using importmap-rails'
-        required: false
-        default: true
-        type: boolean
-      jsbundling:
-        description: 'Run yarn npm audit for projects using jsbundling-rails (esbuild/webpack)'
-        required: false
-        default: false
-        type: boolean
-      rspec_options:
-        description: 'Additional options passed to the rspec command (e.g. --exclude-pattern or path filters)'
-        required: false
-        default: ''
-        type: string
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
 
 jobs:
   scan_ruby:
-    if: ${{ inputs.security_scan == true }}
     runs-on: ubuntu-latest
 
     steps:
@@ -65,7 +31,6 @@ jobs:
         run: bin/bundler-audit
 
   scan_js_importmap:
-    if: ${{ inputs.security_scan == true && inputs.importmap == true }}
     runs-on: ubuntu-latest
 
     steps:
@@ -86,7 +51,6 @@ jobs:
         run: bin/importmap audit
 
   scan_js_jsbundling:
-    if: ${{ inputs.security_scan == true && inputs.jsbundling == true }}
     runs-on: ubuntu-latest
 
     steps:
@@ -110,7 +74,6 @@ jobs:
         run: yarn npm audit
 
   lint:
-    if: ${{ inputs.lint == true }}
     runs-on: ubuntu-latest
     env:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
@@ -141,9 +104,7 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
-  # Test job without Elasticsearch (default)
   test:
-    if: ${{ inputs.elasticsearch == false }}
     runs-on: ubuntu-latest
 
     env:
@@ -173,7 +134,6 @@ jobs:
         id: versions
 
       - name: Install libvips
-        if: ${{ inputs.libvips == true }}
         run: sudo apt-get update && sudo apt-get install -y libvips42
 
       - name: Install ruby
@@ -201,72 +161,4 @@ jobs:
         run: bin/rails spec:prepare css:build
 
       - name: Run tests
-        run: bundle exec rspec --format RSpec::Github::Formatter --format progress ${{ inputs.rspec_options }}
-
-  # Test job with Elasticsearch
-  test_with_elasticsearch:
-    if: ${{ inputs.elasticsearch == true }}
-    runs-on: ubuntu-latest
-
-    env:
-      RAILS_ENV: test
-      ELASTICSEARCH_URL: http://localhost:9200
-
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Read .tool-versions
-        uses: marocchino/tool-versions-action@v1
-        id: versions
-
-      - name: Install Elasticsearch
-        uses: ankane/setup-elasticsearch@v1
-        with:
-          elasticsearch-version: ${{ steps.versions.outputs.elasticsearch }}
-
-      - name: Install libvips
-        if: ${{ inputs.libvips == true }}
-        run: sudo apt-get update && sudo apt-get install -y libvips42
-
-      - name: Install ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-          ruby-version: ${{ steps.versions.outputs.ruby }}
-
-      - name: Install ruby gems
-        run: bundle install
-
-      - name: Install node
-        uses: actions/setup-node@v6
-        with:
-          cache: "yarn"
-          node-version: ${{ steps.versions.outputs.nodejs }}
-
-      - name: Install node packages
-        run: yarn install
-
-      - name: Setup database
-        run: bin/rails db:create db:schema:load
-
-      - name: Prepare test environment
-        run: bin/rails spec:prepare css:build
-
-      - name: Run tests
-        run: bundle exec rspec --format RSpec::Github::Formatter --format progress ${{ inputs.rspec_options }}
+        run: bundle exec rspec --format RSpec::Github::Formatter --format progress
