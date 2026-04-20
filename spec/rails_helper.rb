@@ -132,6 +132,10 @@ RSpec.configure do |config|
   config.before(:each, type: :component) do
     Rails.application.reload_routes_unless_loaded
   end
+
+  config.before(:each, type: :feature) do
+    Rails.application.reload_routes_unless_loaded
+  end
 end
 
 Shoulda::Matchers.configure do |config|
