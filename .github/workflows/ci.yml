@@ -8,5 +8,5 @@ on:
 
 jobs:
   ci:
-    uses: ./.github/workflows/_shared/ci-rails.yml
+    uses: ./.github/workflows/_ci-rails.yml
     secrets: inherit
