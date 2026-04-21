@@ -1,8 +1,10 @@
 # Baseline Issue #1 — Import Optimus Template, Rebrand, and Hello-World Deploy
 
+> **Scope update (2026-04-19):** Phase 3 (Kamal hello-world deploy) was **deferred to Issue #17**. Issue #1 now covers Phases 1 + 2 only (import + rebrand). The Phase 3 content below is preserved as the canonical plan for #17 — when that issue executes, follow the Phase 3 sections of this document.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Bootstrap Baseline from the `aaa/optimus-base` Rails template by importing it verbatim, rebranding every MPI/Optimus reference to Baseline, and deploying a hello-world instance to `https://baseline.kc.tennis` on DigitalOcean via Kamal.
+**Goal (Issue #1, Phases 1 + 2):** Bootstrap Baseline from the `aaa/optimus-base` Rails template by importing it verbatim and rebranding every MPI/Optimus reference. Production deploy to `https://baseline.kc.tennis` via Kamal is tracked in Issue #17.
 
 **Architecture:** Three-phase work with two hard checkpoints between phases. Phase 1 is a single verbatim-copy commit so the rebrand diff in Phase 2 is the only delta. Phase 2 is decomposed into small commits by concern (structural renames, retention-list scrubs, doc deletions, UI/docs rewrites) for traceable review; if the issue's "one rebrand commit" rule matters more than granular diffs, squash at the end. Phase 3 is deploy-only work gated on external preconditions (DNS, droplet, registry) that the HC must confirm before execution.
 
@@ -1337,7 +1339,9 @@ Executes the issue's Acceptance Criteria greps. Must all pass before proceeding 
 
 # Phase 3 — Kamal Hello-World Deploy
 
-Deploys a Baseline container to the DigitalOcean droplet at `baseline.kc.tennis` with Let's Encrypt TLS. Requires P3.D1–P3.D5 settled and verified.
+> **Scope:** This phase was deferred from Issue #1 to **Issue #17**. The content here is the canonical plan for #17. Execute when #14's remaining DigitalOcean infrastructure items (droplet, registry, managed Postgres, DNS) are complete.
+
+Deploys a Baseline container to the DigitalOcean droplet at `baseline.kc.tennis` with Let's Encrypt TLS. Requires P3.D1–P3.D8 settled and verified.
 
 ---
 

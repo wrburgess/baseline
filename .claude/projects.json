@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "baseline": {
+      "name": "Baseline",
+      "description": "Rails application template",
+      "github_url": "https://github.com/wrburgess/baseline",
+      "github_org": "wrburgess",
+      "github_repo": "baseline",
+      "role": "template"
+    }
+  }
+}

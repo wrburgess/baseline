@@ -1,0 +1,228 @@
+#!/usr/bin/env bash
+#
+# setup-copilot-mcp.sh
+#
+# Pushes copilot-setup-steps.yml and configures the "copilot" environment
+# with secrets for all repos in your GitHub org.
+#
+# Prerequisites:
+#   - gh CLI installed and authenticated (gh auth login)
+#   - You have admin access to the org repos
+#
+# Usage:
+#   chmod +x setup-copilot-mcp.sh
+#   ./setup-copilot-mcp.sh
+#
+# What this script does:
+#   1. Pushes .github/workflows/copilot-setup-steps.yml to each repo
+#   2. Creates a "copilot" environment on each repo
+#   3. Sets COPILOT_MCP_* secrets in that environment
+#
+# What you still need to do manually:
+#   - Paste the MCP JSON config into each repo's Settings → Copilot → Coding agent
+#     (no public API exists for this yet)
+#
+
+set -euo pipefail
+
+# ============================================================================
+# CONFIGURATION — edit these values
+# ============================================================================
+ORG="baseline"
+
+# Repos to configure (add/remove as needed)
+REPOS=(
+  "baseline"
+)
+
+# Path to your copilot-setup-steps.yml (relative to this script's location in bin/)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SETUP_STEPS_FILE="${SCRIPT_DIR}/../config/copilot-setup-steps.yml"
+
+# Secrets to set in the "copilot" environment on each repo.
+# The script will prompt you for values if these env vars aren't already set.
+SECRET_NAMES=(
+  "COPILOT_MCP_CONTEXT7_API_KEY"
+  "COPILOT_MCP_HEROKU_API_KEY"
+  "COPILOT_MCP_AWS_ACCESS_KEY_ID"
+  "COPILOT_MCP_AWS_SECRET_ACCESS_KEY"
+  "COPILOT_MCP_AWS_REGION"
+)
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+info()  { echo -e "\033[1;34m▸ $*\033[0m"; }
+ok()    { echo -e "\033[1;32m✓ $*\033[0m"; }
+warn()  { echo -e "\033[1;33m⚠ $*\033[0m"; }
+fail()  { echo -e "\033[1;31m✗ $*\033[0m"; exit 1; }
+
+check_prereqs() {
+  command -v gh &>/dev/null || fail "gh CLI not found. Install: https://cli.github.com"
+  gh auth status &>/dev/null || fail "Not authenticated. Run: gh auth login"
+
+  if [[ ! -f "$SETUP_STEPS_FILE" ]]; then
+    fail "Setup steps file not found: $SETUP_STEPS_FILE"
+  fi
+}
+
+# Collect secret values interactively (only if not already in env)
+collect_secrets() {
+  info "Collecting secret values..."
+  echo "  (Press Enter to skip a secret if you want to set it later)"
+  echo ""
+
+  declare -gA SECRET_VALUES
+
+  for name in "${SECRET_NAMES[@]}"; do
+    # Check if already set in environment
+    if [[ -n "${!name:-}" ]]; then
+      SECRET_VALUES[$name]="${!name}"
+      ok "$name (from environment)"
+    else
+      read -rsp "  Enter value for $name: " value
+      echo ""
+      if [[ -n "$value" ]]; then
+        SECRET_VALUES[$name]="$value"
+        ok "$name (set)"
+      else
+        warn "$name (skipped)"
+      fi
+    fi
+  done
+  echo ""
+}
+
+# Push copilot-setup-steps.yml to a repo's default branch
+push_setup_steps() {
+  local repo="$1"
+  local full_repo="${ORG}/${repo}"
+  local target_path=".github/workflows/copilot-setup-steps.yml"
+
+  info "[$repo] Pushing $target_path ..."
+
+  # Get the default branch
+  local default_branch
+  default_branch=$(gh api "repos/${full_repo}" --jq '.default_branch')
+
+  # Check if file already exists
+  local existing_sha=""
+  existing_sha=$(gh api "repos/${full_repo}/contents/${target_path}?ref=${default_branch}" \
+    --jq '.sha' 2>/dev/null || echo "")
+
+  # Base64 encode the file content
+  local content_b64
+  content_b64=$(base64 -w 0 < "$SETUP_STEPS_FILE" 2>/dev/null || base64 -i "$SETUP_STEPS_FILE")
+
+  # Build the API payload
+  local payload
+  if [[ -n "$existing_sha" ]]; then
+    payload=$(jq -n \
+      --arg msg "Update copilot-setup-steps.yml for MCP server support" \
+      --arg content "$content_b64" \
+      --arg branch "$default_branch" \
+      --arg sha "$existing_sha" \
+      '{message: $msg, content: $content, branch: $branch, sha: $sha}')
+  else
+    payload=$(jq -n \
+      --arg msg "Add copilot-setup-steps.yml for MCP server support" \
+      --arg content "$content_b64" \
+      --arg branch "$default_branch" \
+      '{message: $msg, content: $content, branch: $branch}')
+  fi
+
+  gh api "repos/${full_repo}/contents/${target_path}" \
+    --method PUT \
+    --input - <<< "$payload" \
+    --silent
+
+  ok "[$repo] copilot-setup-steps.yml pushed to ${default_branch}"
+}
+
+# Create the "copilot" environment if it doesn't exist
+ensure_copilot_environment() {
+  local repo="$1"
+  local full_repo="${ORG}/${repo}"
+
+  info "[$repo] Ensuring 'copilot' environment exists..."
+
+  gh api "repos/${full_repo}/environments/copilot" \
+    --method PUT \
+    --input - <<< '{}' \
+    --silent 2>/dev/null || true
+
+  ok "[$repo] copilot environment ready"
+}
+
+# Set secrets in the "copilot" environment
+set_environment_secrets() {
+  local repo="$1"
+  local full_repo="${ORG}/${repo}"
+
+  info "[$repo] Setting environment secrets..."
+
+  # Get the environment public key for encryption
+  local key_response
+  key_response=$(gh api "repos/${full_repo}/environments/copilot/secrets/public-key")
+
+  local public_key
+  public_key=$(echo "$key_response" | jq -r '.key')
+  local key_id
+  key_id=$(echo "$key_response" | jq -r '.key_id')
+
+  for name in "${SECRET_NAMES[@]}"; do
+    local value="${SECRET_VALUES[$name]:-}"
+    if [[ -z "$value" ]]; then
+      continue
+    fi
+
+    # gh secret set handles encryption for us when targeting an environment
+    echo -n "$value" | gh secret set "$name" \
+      --repo "$full_repo" \
+      --env "copilot" 2>/dev/null
+
+    ok "[$repo] Set $name"
+  done
+}
+
+# ============================================================================
+# MAIN
+# ============================================================================
+main() {
+  echo ""
+  echo "╔══════════════════════════════════════════════════════╗"
+  echo "║  Copilot Coding Agent — MCP Setup Script            ║"
+  echo "╚══════════════════════════════════════════════════════╝"
+  echo ""
+
+  check_prereqs
+  collect_secrets
+
+  for repo in "${REPOS[@]}"; do
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  Repository: ${ORG}/${repo}"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+    push_setup_steps "$repo"
+    ensure_copilot_environment "$repo"
+    set_environment_secrets "$repo"
+  done
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  ok "Done! Automated setup complete."
+  echo ""
+  warn "MANUAL STEP REMAINING:"
+  echo "  Paste the MCP JSON config into each repo's settings:"
+  echo ""
+  for repo in "${REPOS[@]}"; do
+    echo "    https://github.com/${ORG}/${repo}/settings/copilot/coding_agent"
+  done
+  echo ""
+  echo "  The corrected JSON (with COPILOT_MCP_ prefixes) is in: mcp-config.json"
+  echo ""
+}
+
+main "$@"

@@ -1,21 +1,24 @@
 # Baseline
 
-A tennis scouting and player-profile app for Kansas City USTA league captains.
+A Ruby on Rails application template.
 
-**Status:** pre-Phase-0. Repo contains planning docs only; Rails app lands in Phase 0.
+## Getting Started
 
-**Deployed (future):** `baseline.kc.tennis`
+- See [docs/getting-started.md](docs/getting-started.md) for setup instructions.
+- See [docs/hc-guide.md](docs/hc-guide.md) for development workflow and conventions.
 
-## Planning docs
+## Credentials
 
-- [`docs/spec.md`](docs/spec.md) — authoritative spec from the April 2026 grill session
-- [`docs/project-notes.md`](docs/project-notes.md) — project-level overview, goals, approach
+- See [docs/credentials_management.md](docs/credentials_management.md).
 
-## Project management
+## System Permissions
 
-- [Baseline Setup project](https://github.com/users/wrburgess/projects/2) — phase issues
+- See [docs/system_permissions.md](docs/system_permissions.md).
 
-## Predecessors (historical reference, not dependencies)
+## Notification System
 
-- `wrburgess/baseline-archive` — prior planning artifacts
-- `aaa/courtview` (private) — decommissioned; its data model does not port forward
+- See [docs/notification_system.md](docs/notification_system.md).
+
+## Deployment
+
+- See [docs/deployment.md](docs/deployment.md).

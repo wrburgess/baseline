@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+ENV["RAILS_ENV"] ||= "production"
+
+exec "bundle", "exec", "good_job", "start"

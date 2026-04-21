@@ -1,0 +1,45 @@
+default: &default
+  adapter: postgresql
+  host: localhost
+  encoding: unicode
+  pool: <%= ENV.fetch("DB_POOL") { ENV.fetch("RAILS_MAX_THREADS") { 5 } } %>
+
+development:
+  <<: *default
+  username: postgres
+  password: postgres
+  database: <%= ENV.fetch("POSTGRES_DB_DEVELOPMENT", "baseline_development") %>
+  pool: 5
+  timeout: 5000
+
+test:
+  <<: *default
+  username: postgres
+  password: postgres
+  database: <%= ENV.fetch("POSTGRES_DB_TEST", "baseline_test") %>
+
+staging:
+  primary:
+    <<: *default
+    url: <%= ENV["DATABASE_URL"] %>
+  cache:
+    <<: *default
+    url: <%= ENV["CACHE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    migrations_paths: db/cache_migrate
+  cable:
+    <<: *default
+    url: <%= ENV["CABLE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    migrations_paths: db/cable_migrate
+
+production:
+  primary:
+    <<: *default
+    url: <%= ENV["DATABASE_URL"] %>
+  cache:
+    <<: *default
+    url: <%= ENV["CACHE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    migrations_paths: db/cache_migrate
+  cable:
+    <<: *default
+    url: <%= ENV["CABLE_DATABASE_URL"] || ENV["DATABASE_URL"] %>
+    migrations_paths: db/cable_migrate

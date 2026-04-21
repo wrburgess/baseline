@@ -1,0 +1,32 @@
+name: Update Packages
+
+on:
+  schedule:
+    - cron: '5 12 * * *' # 06:05 CST (UTC-6)
+  workflow_dispatch:
+
+jobs:
+  update-packages:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          yarn install --immutable
+
+      - name: Run update script
+        run: |
+          chmod +x bin/update-packages
+          bin/update-packages
