@@ -7,7 +7,7 @@ gem "rails", "8.1.3"
 # gem install bundler
 
 gem "awesome_print", "1.9.2"
-gem "blazer", "3.3.0"
+gem "blazer", "3.4.0"
 gem "bootsnap", "1.23.0", require: false
 gem "caxlsx_rails", "0.7.1"
 gem "cssbundling-rails", "1.4.3"
