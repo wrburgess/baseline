@@ -3,7 +3,7 @@
 ## Notes
 
 - This is a reboot of the Courtview project at `aaa/courtview`. Courtview is historical reference, not a dependency — schema is derived from requirements, not ported.
-- This project will utilize the Optimus template at `aaa/optimus-base` as its starting point. MPI/Optimus references are scrubbed in Phase 0.
+- This project will utilize the Optimus template at `aaa/optimus-base` as its starting point. **MPI-specific** references are scrubbed in Phase 0; **Optimus conventions** (model/concern/controller/route patterns, enum modules, Ransack, Notification/Loggable/Archivable concerns, member/collection exports, Claude configuration) are preserved and followed going forward. See `docs/spec.md` §7 Phase 0 for the preserve/scrub list.
 - This project is a personal and public project locally at `aaa/baseline` and on the `wrburgess/baseline` GitHub repo. "Public" means the source code is open; the deployed app is **always behind authentication** — no unauthenticated surfaces.
 - Deployed at `baseline.kc.tennis`.
 - Full spec: [`docs/spec.md`](./spec.md).
