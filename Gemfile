@@ -7,14 +7,14 @@ gem "rails", "8.1.3"
 # gem install bundler
 
 gem "awesome_print", "1.9.2"
-gem "blazer", "3.3.0"
+gem "blazer", "3.4.0"
 gem "bootsnap", "1.23.0", require: false
 gem "caxlsx_rails", "0.7.1"
 gem "cssbundling-rails", "1.4.3"
 gem "csv", "3.3.5"
 gem "devise", "5.0.3"
 gem "foreman", "0.90.0"
-gem "good_job", "4.18.1"
+gem "good_job", "4.18.2"
 gem "image_processing", "1.14.0"
 gem "importmap-rails", "2.2.3"
 gem "jbuilder", "2.14.1"
