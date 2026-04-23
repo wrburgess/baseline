@@ -143,9 +143,30 @@ fi
 echo -e "${YELLOW}Running bundle update...${NC}"
 bundle update --all
 
-# Check if Gemfile or Gemfile.lock changed
-if git diff --quiet Gemfile Gemfile.lock 2>/dev/null; then
-  echo -e "${GREEN}✓ No actual changes to Gemfile or Gemfile.lock.${NC}"
+# Keep .tool-versions in sync with Gemfile.lock's RUBY VERSION.
+# `bundle update --all` rewrites the lockfile's RUBY VERSION to whatever Ruby is
+# currently running. When the script runs locally on a Ruby that differs from
+# .tool-versions, the lockfile and .tool-versions drift, and `bundle install
+# --frozen` fails in CI (ruby/setup-ruby installs .tool-versions' Ruby, then
+# the frozen lockfile refuses to unlock to match).
+if [ -f Gemfile.lock ] && [ -f .tool-versions ]; then
+  LOCKFILE_RUBY=$(awk '/^RUBY VERSION/{getline; print $2; exit}' Gemfile.lock)
+  TOOL_VERSIONS_RUBY=$(awk '$1=="ruby"{print $2; exit}' .tool-versions)
+  if [ -n "$LOCKFILE_RUBY" ] && [ -n "$TOOL_VERSIONS_RUBY" ] && [ "$LOCKFILE_RUBY" != "$TOOL_VERSIONS_RUBY" ]; then
+    echo -e "${YELLOW}Syncing .tool-versions ruby ${TOOL_VERSIONS_RUBY} → ${LOCKFILE_RUBY} to match Gemfile.lock${NC}"
+    LOCKFILE_RUBY="$LOCKFILE_RUBY" ruby <<'RUBY'
+path = '.tool-versions'
+new_ruby = ENV.fetch('LOCKFILE_RUBY')
+content = File.read(path)
+updated = content.sub(/^(ruby\s+)\S+/, "\\1#{new_ruby}")
+File.write(path, updated)
+RUBY
+  fi
+fi
+
+# Check if Gemfile, Gemfile.lock, or .tool-versions changed
+if git diff --quiet Gemfile Gemfile.lock .tool-versions 2>/dev/null; then
+  echo -e "${GREEN}✓ No actual changes to Gemfile, Gemfile.lock, or .tool-versions.${NC}"
   exit 0
 fi
 
@@ -197,7 +218,7 @@ $(git diff Gemfile.lock)
 echo -e "${YELLOW}Committing changes...${NC}"
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-git add Gemfile Gemfile.lock
+git add Gemfile Gemfile.lock .tool-versions
 git commit -m "$PR_TITLE"
 
 # Push branch

@@ -40,7 +40,7 @@ gem "solid_cache", "1.0.10"
 gem "stimulus-rails", "1.3.4"
 gem "thruster", "0.1.20", require: false
 gem "turbo-rails", "2.0.23"
-gem "view_component", "4.7.0"
+gem "view_component", "4.8.0"
 
 group :development, :staging do
   gem "lookbook", "2.3.14"
@@ -53,7 +53,7 @@ group :development do
 end
 
 group :development, :test do
-  gem "bullet", "8.1.0"
+  gem "bullet", "8.1.1"
   gem "bundler-audit", "0.9.3", require: false
   gem "debug", "1.11.1"
   gem "factory_bot_rails", "6.5.1"
