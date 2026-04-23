@@ -53,7 +53,7 @@ group :development do
 end
 
 group :development, :test do
-  gem "bullet", "8.1.0"
+  gem "bullet", "8.1.1"
   gem "bundler-audit", "0.9.3", require: false
   gem "debug", "1.11.1"
   gem "factory_bot_rails", "6.5.1"
