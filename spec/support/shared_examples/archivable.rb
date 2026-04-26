@@ -19,6 +19,23 @@ RSpec.shared_examples 'archivable' do
     end
   end
 
+  describe '.archive!' do
+    it 'transitions an active instance to archived' do
+      instance_of_class = create(described_class.name.underscore.to_sym, archived_at: nil)
+
+      expect { instance_of_class.archive! }.to change { instance_of_class.reload.archived? }.from(false).to(true)
+      expect(instance_of_class.archived_at).to be_a(ActiveSupport::TimeWithZone).or be_a(DateTime)
+      expect(instance_of_class.active?).to be_falsey
+    end
+
+    it 'raises ActiveRecord::RecordInvalid when underlying update! fails' do
+      instance_of_class = create(described_class.name.underscore.to_sym, archived_at: nil)
+      allow(instance_of_class).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(instance_of_class))
+
+      expect { instance_of_class.archive! }.to raise_error(ActiveRecord::RecordInvalid)
+    end
+  end
+
   describe '.unarchive' do
     it 'unarchives the instance' do
       instance_of_class = create(described_class.name.underscore.to_sym, archived_at: DateTime.current)
@@ -26,6 +43,23 @@ RSpec.shared_examples 'archivable' do
       instance_of_class.reload
       expect(instance_of_class.archived?).to be_falsey
       expect(instance_of_class.active?).to be_truthy
+    end
+  end
+
+  describe '.unarchive!' do
+    it 'transitions an archived instance to active' do
+      instance_of_class = create(described_class.name.underscore.to_sym, archived_at: DateTime.current)
+
+      expect { instance_of_class.unarchive! }.to change { instance_of_class.reload.active? }.from(false).to(true)
+      expect(instance_of_class.archived_at).to be_nil
+      expect(instance_of_class.archived?).to be_falsey
+    end
+
+    it 'raises ActiveRecord::RecordInvalid when underlying update! fails' do
+      instance_of_class = create(described_class.name.underscore.to_sym, archived_at: DateTime.current)
+      allow(instance_of_class).to receive(:update!).and_raise(ActiveRecord::RecordInvalid.new(instance_of_class))
+
+      expect { instance_of_class.unarchive! }.to raise_error(ActiveRecord::RecordInvalid)
     end
   end
 

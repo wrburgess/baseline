@@ -11,7 +11,7 @@ class AdminController < ApplicationController
     authorize(@instance)
 
     @instance.archive!
-    @instance.log(user: current_user, operation: action_nameD)
+    @instance.log(user: current_user, operation: action_name)
     flash[:danger] = "#{@instance.class_name_title} deleted"
     redirect_to polymorphic_path([ :admin, @model_class ])
   end

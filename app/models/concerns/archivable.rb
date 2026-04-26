@@ -18,7 +18,15 @@ module Archivable
     update(archived_at: DateTime.current)
   end
 
+  def archive!
+    update!(archived_at: DateTime.current)
+  end
+
   def unarchive
     update(archived_at: nil)
+  end
+
+  def unarchive!
+    update!(archived_at: nil)
   end
 end
