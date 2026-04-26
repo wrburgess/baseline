@@ -50,6 +50,10 @@ RSpec.describe SystemOperations do
       expect(described_class::EXPORT_IMPORT_EXAMPLE).to eq("export_import_example")
     end
 
+    it "defines IMPERSONATE" do
+      expect(described_class::IMPERSONATE).to eq("impersonate")
+    end
+
     it "defines IMPORT" do
       expect(described_class::IMPORT).to eq("import")
     end
@@ -90,6 +94,10 @@ RSpec.describe SystemOperations do
       expect(described_class::SHOW).to eq("show")
     end
 
+    it "defines TRIGGER_PASSWORD_RESET_EMAIL" do
+      expect(described_class::TRIGGER_PASSWORD_RESET_EMAIL).to eq("trigger_password_reset_email")
+    end
+
     it "defines UNARCHIVE" do
       expect(described_class::UNARCHIVE).to eq("unarchive")
     end
@@ -119,6 +127,7 @@ RSpec.describe SystemOperations do
           "edit",
           "enter_match_night",
           "export_import_example",
+          "impersonate",
           "import",
           "index",
           "link_fixture",
@@ -129,6 +138,7 @@ RSpec.describe SystemOperations do
           "reject",
           "share",
           "show",
+          "trigger_password_reset_email",
           "unarchive",
           "update",
           "upload"

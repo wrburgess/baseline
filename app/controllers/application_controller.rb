@@ -9,6 +9,8 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
+  private
+
   def controller_class
     controller_name.classify.safe_constantize
   end
@@ -24,8 +26,6 @@ class ApplicationController < ActionController::Base
   def controller_class_symbolized
     controller_name.underscore.singularize.to_sym
   end
-
-  private
 
   def user_not_authorized(_exception = nil)
     flash[:error] = "You are not authorized to perform this action."
