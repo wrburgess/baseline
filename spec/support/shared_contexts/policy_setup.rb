@@ -12,13 +12,19 @@ RSpec.shared_context 'policy_setup' do
   let(:system_role) { create(:system_role) }
   let(:sp_archive) { create(:system_permission, name: "#{klass} Archive", resource: klass, operation: 'archive') }
   let(:sp_collection_export_xlsx) { create(:system_permission, name: "#{klass} Collection Export Xlsx", resource: klass, operation: 'collection_export_xlsx') }
+  let(:sp_commit) { create(:system_permission, name: "#{klass} Commit", resource: klass, operation: 'commit') }
   let(:sp_copy) { create(:system_permission, name: "#{klass} Copy", resource: klass, operation: 'copy') }
   let(:sp_create) { create(:system_permission, name: "#{klass} Create", resource: klass, operation: 'create') }
   let(:sp_destroy) { create(:system_permission, name: "#{klass} Destroy", resource: klass, operation: 'destroy') }
+  let(:sp_disambiguate) { create(:system_permission, name: "#{klass} Disambiguate", resource: klass, operation: 'disambiguate') }
   let(:sp_edit) { create(:system_permission, name: "#{klass} Edit", resource: klass, operation: 'edit') }
+  let(:sp_enter_match_night) { create(:system_permission, name: "#{klass} Enter Match Night", resource: klass, operation: 'enter_match_night') }
   let(:sp_index) { create(:system_permission, name: "#{klass} Index", resource: klass, operation: 'index') }
+  let(:sp_link_fixture) { create(:system_permission, name: "#{klass} Link Fixture", resource: klass, operation: 'link_fixture') }
   let(:sp_member_export_xlsx) { create(:system_permission, name: "#{klass} Member Export Xlsx", resource: klass, operation: 'member_export_xlsx') }
+  let(:sp_merge) { create(:system_permission, name: "#{klass} Merge", resource: klass, operation: 'merge') }
   let(:sp_new) { create(:system_permission, name: "#{klass} New", resource: klass, operation: 'new') }
+  let(:sp_reject) { create(:system_permission, name: "#{klass} Reject", resource: klass, operation: 'reject') }
   let(:sp_show) { create(:system_permission, name: "#{klass} Show", resource: klass, operation: 'show') }
   let(:sp_update) { create(:system_permission, name: "#{klass} Update", resource: klass, operation: 'update') }
   let(:sp_unarchive) { create(:system_permission, name: "#{klass} Unarchive", resource: klass, operation: 'unarchive') }
@@ -27,13 +33,19 @@ RSpec.shared_context 'policy_setup' do
     system_role.system_permissions << [
       sp_archive,
       sp_collection_export_xlsx,
+      sp_commit,
       sp_copy,
       sp_create,
       sp_destroy,
+      sp_disambiguate,
       sp_edit,
+      sp_enter_match_night,
       sp_index,
+      sp_link_fixture,
       sp_member_export_xlsx,
+      sp_merge,
       sp_new,
+      sp_reject,
       sp_show,
       sp_unarchive,
       sp_update
