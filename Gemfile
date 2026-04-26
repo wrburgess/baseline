@@ -8,7 +8,7 @@ gem "rails", "8.1.3"
 
 gem "awesome_print", "1.9.2"
 gem "blazer", "3.4.0"
-gem "bootsnap", "1.23.0", require: false
+gem "bootsnap", "1.24.0", require: false
 gem "caxlsx_rails", "0.7.1"
 gem "cssbundling-rails", "1.4.3"
 gem "csv", "3.3.5"
@@ -35,7 +35,7 @@ gem "sentry-ruby", "6.5.0"
 gem "sentry-rails", "6.5.0"
 gem "simple_form", "5.4.1"
 gem "solid_cable", "3.0.12"
-gem "strong_migrations", "2.6.0"
+gem "strong_migrations", "2.7.0"
 gem "solid_cache", "1.0.10"
 gem "stimulus-rails", "1.3.4"
 gem "thruster", "0.1.20", require: false
