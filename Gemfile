@@ -21,7 +21,7 @@ gem "jbuilder", "2.14.1"
 gem "jsbundling-rails", "1.3.1"
 gem "jwt", "3.1.2"
 gem "kamal", require: false
-gem "maintenance_tasks", "2.14.0"
+gem "maintenance_tasks", "2.15.0"
 gem "pagy", "43.5.3"
 gem "pg", "1.6.3"
 gem "pghero", "3.8.0"
