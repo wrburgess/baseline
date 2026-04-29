@@ -8,7 +8,7 @@ gem "rails", "8.1.3"
 
 gem "awesome_print", "1.9.2"
 gem "blazer", "3.4.0"
-gem "bootsnap", "1.24.0", require: false
+gem "bootsnap", "1.24.1", require: false
 gem "caxlsx_rails", "0.7.1"
 gem "cssbundling-rails", "1.4.3"
 gem "csv", "3.3.5"
@@ -21,7 +21,7 @@ gem "jbuilder", "2.14.1"
 gem "jsbundling-rails", "1.3.1"
 gem "jwt", "3.1.2"
 gem "kamal", require: false
-gem "maintenance_tasks", "2.14.0"
+gem "maintenance_tasks", "2.15.0"
 gem "pagy", "43.5.3"
 gem "pg", "1.6.3"
 gem "pghero", "3.8.0"
