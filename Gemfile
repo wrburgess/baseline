@@ -60,7 +60,7 @@ group :development, :test do
   gem "faker", "3.8.0"
   gem "rspec-rails", "8.0.4"
   gem "rubocop", "1.86.1"
-  gem "rubocop-capybara", "2.22.1", require: false
+  gem "rubocop-capybara", "2.23.0", require: false
   gem "rubocop-factory_bot", "2.28.0", require: false
   gem "rubocop-rails-omakase", require: false
   gem "rubocop-rspec", "3.9.0", require: false
