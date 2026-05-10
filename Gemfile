@@ -8,11 +8,11 @@ gem "rails", "8.1.3"
 
 gem "awesome_print", "1.9.2"
 gem "blazer", "3.4.0"
-gem "bootsnap", "1.24.0", require: false
+gem "bootsnap", "1.24.3", require: false
 gem "caxlsx_rails", "0.7.1"
 gem "cssbundling-rails", "1.4.3"
 gem "csv", "3.3.5"
-gem "devise", "5.0.3"
+gem "devise", "5.0.4"
 gem "foreman", "0.90.0"
 gem "good_job", "4.18.2"
 gem "image_processing", "1.14.0"
@@ -21,7 +21,7 @@ gem "jbuilder", "2.14.1"
 gem "jsbundling-rails", "1.3.1"
 gem "jwt", "3.1.2"
 gem "kamal", require: false
-gem "maintenance_tasks", "2.14.0"
+gem "maintenance_tasks", "2.15.0"
 gem "pagy", "43.5.3"
 gem "pg", "1.6.3"
 gem "pghero", "3.8.0"
@@ -40,7 +40,7 @@ gem "solid_cache", "1.0.10"
 gem "stimulus-rails", "1.3.4"
 gem "thruster", "0.1.20", require: false
 gem "turbo-rails", "2.0.23"
-gem "view_component", "4.8.0"
+gem "view_component", "4.9.0"
 
 group :development, :staging do
   gem "lookbook", "2.3.14"
@@ -60,7 +60,7 @@ group :development, :test do
   gem "faker", "3.8.0"
   gem "rspec-rails", "8.0.4"
   gem "rubocop", "1.86.1"
-  gem "rubocop-capybara", "2.22.1", require: false
+  gem "rubocop-capybara", "2.23.0", require: false
   gem "rubocop-factory_bot", "2.28.0", require: false
   gem "rubocop-rails-omakase", require: false
   gem "rubocop-rspec", "3.9.0", require: false
