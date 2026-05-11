@@ -7,7 +7,7 @@
     "bootstrap-icons": "1.13.1",
     "esbuild": "0.28.0",
     "sass": "1.99.0",
-    "tom-select": "2.6.0"
+    "tom-select": "2.6.1"
   },
   "name": "baseline",
   "repository": "git@github.com:wrburgess/baseline.git",
