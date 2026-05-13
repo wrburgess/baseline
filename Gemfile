@@ -74,7 +74,7 @@ group :test do
   gem "rspec-github", "3.0.0"
   gem "rspec-json_expectations", "2.2.0"
   gem "rspec_junit_formatter", "0.6.0"
-  gem "selenium-webdriver", "4.43.0"
+  gem "selenium-webdriver", "4.44.0"
   gem "shoulda-matchers", "7.0.1"
   gem "timecop", "0.9.11"
   gem "vcr", "6.4.0"
