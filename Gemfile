@@ -19,7 +19,7 @@ gem "image_processing", "1.14.0"
 gem "importmap-rails", "2.2.3"
 gem "jbuilder", "2.14.1"
 gem "jsbundling-rails", "1.3.1"
-gem "jwt", "3.1.2"
+gem "jwt", "3.2.0"
 gem "kamal", require: false
 gem "maintenance_tasks", "2.14.0"
 gem "pagy", "43.5.3"
