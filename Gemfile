@@ -59,7 +59,7 @@ group :development, :test do
   gem "factory_bot_rails", "6.5.1"
   gem "faker", "3.8.0"
   gem "rspec-rails", "8.0.4"
-  gem "rubocop", "1.86.1"
+  gem "rubocop", "1.86.2"
   gem "rubocop-capybara", "2.22.1", require: false
   gem "rubocop-factory_bot", "2.28.0", require: false
   gem "rubocop-rails-omakase", require: false
