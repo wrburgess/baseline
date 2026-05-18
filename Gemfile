@@ -38,7 +38,7 @@ gem "solid_cable", "3.0.12"
 gem "strong_migrations", "2.7.0"
 gem "solid_cache", "1.0.10"
 gem "stimulus-rails", "1.3.4"
-gem "thruster", "0.1.20", require: false
+gem "thruster", "0.1.21", require: false
 gem "turbo-rails", "2.0.23"
 gem "view_component", "4.8.0"
 
