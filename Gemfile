@@ -8,39 +8,39 @@ gem "rails", "8.1.3"
 
 gem "awesome_print", "1.9.2"
 gem "blazer", "3.4.0"
-gem "bootsnap", "1.24.0", require: false
+gem "bootsnap", "1.24.6", require: false
 gem "caxlsx_rails", "0.7.1"
 gem "cssbundling-rails", "1.4.3"
 gem "csv", "3.3.5"
-gem "devise", "5.0.3"
+gem "devise", "5.0.4"
 gem "foreman", "0.90.0"
-gem "good_job", "4.18.2"
-gem "image_processing", "1.14.0"
+gem "good_job", "4.19.0"
+gem "image_processing", "2.0.2"
 gem "importmap-rails", "2.2.3"
-gem "jbuilder", "2.14.1"
+gem "jbuilder", "2.15.1"
 gem "jsbundling-rails", "1.3.1"
-gem "jwt", "3.1.2"
+gem "jwt", "3.2.0"
 gem "kamal", require: false
-gem "maintenance_tasks", "2.14.0"
-gem "pagy", "43.5.3"
+gem "maintenance_tasks", "2.17.0"
+gem "pagy", "43.5.6"
 gem "pg", "1.6.3"
 gem "pghero", "3.8.0"
 gem "postmark-rails", "0.22.1"
 gem "propshaft", "1.3.2"
-gem "puma", "8.0.1"
+gem "puma", "8.0.2"
 gem "pundit", "2.5.2"
 gem "ransack", "4.4.1"
 gem "roo", "3.0.0"
-gem "sentry-ruby", "6.5.0"
-gem "sentry-rails", "6.5.0"
+gem "sentry-ruby", "6.6.1"
+gem "sentry-rails", "6.6.1"
 gem "simple_form", "5.4.1"
-gem "solid_cable", "3.0.12"
-gem "strong_migrations", "2.7.0"
+gem "solid_cable", "4.0.0"
+gem "strong_migrations", "2.8.0"
 gem "solid_cache", "1.0.10"
 gem "stimulus-rails", "1.3.4"
-gem "thruster", "0.1.20", require: false
+gem "thruster", "0.1.21", require: false
 gem "turbo-rails", "2.0.23"
-gem "view_component", "4.8.0"
+gem "view_component", "4.12.0"
 
 group :development, :staging do
   gem "lookbook", "2.3.14"
@@ -53,17 +53,17 @@ group :development do
 end
 
 group :development, :test do
-  gem "bullet", "8.1.1"
+  gem "bullet", "8.1.3"
   gem "bundler-audit", "0.9.3", require: false
   gem "debug", "1.11.1"
   gem "factory_bot_rails", "6.5.1"
   gem "faker", "3.8.0"
   gem "rspec-rails", "8.0.4"
-  gem "rubocop", "1.86.1"
-  gem "rubocop-capybara", "2.22.1", require: false
+  gem "rubocop", "1.87.0"
+  gem "rubocop-capybara", "2.23.0", require: false
   gem "rubocop-factory_bot", "2.28.0", require: false
   gem "rubocop-rails-omakase", require: false
-  gem "rubocop-rspec", "3.9.0", require: false
+  gem "rubocop-rspec", "3.10.2", require: false
   gem "rubocop-rspec_rails", "2.32.0", require: false
 end
 
@@ -74,7 +74,7 @@ group :test do
   gem "rspec-github", "3.0.0"
   gem "rspec-json_expectations", "2.2.0"
   gem "rspec_junit_formatter", "0.6.0"
-  gem "selenium-webdriver", "4.43.0"
+  gem "selenium-webdriver", "4.44.0"
   gem "shoulda-matchers", "7.0.1"
   gem "timecop", "0.9.11"
   gem "vcr", "6.4.0"
