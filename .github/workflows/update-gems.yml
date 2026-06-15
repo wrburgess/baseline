@@ -1,8 +1,6 @@
 name: Update Gems
 
 on:
-  schedule:
-    - cron: '0 12 * * *' # 06:00 CST (UTC-6)
   workflow_dispatch:
 
 permissions:
