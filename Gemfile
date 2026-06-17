@@ -12,7 +12,7 @@ gem "bootsnap", "1.24.0", require: false
 gem "caxlsx_rails", "0.7.1"
 gem "cssbundling-rails", "1.4.3"
 gem "csv", "3.3.5"
-gem "devise", "5.0.3"
+gem "devise", "5.0.4"
 gem "foreman", "0.90.0"
 gem "good_job", "4.18.2"
 gem "image_processing", "1.14.0"
